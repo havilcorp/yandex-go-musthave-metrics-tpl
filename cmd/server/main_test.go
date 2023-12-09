@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers"
 	"github.com/stretchr/testify/require"
 )
 
@@ -64,7 +65,7 @@ func TestUpdateCounterHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(test.want.method, test.want.url, nil)
 			w := httptest.NewRecorder()
-			UpdateCounterHandler(w, request)
+			handlers.UpdateCounterHandler(w, request)
 			res := w.Result()
 			require.Equal(t, test.want.code, res.StatusCode)
 			defer res.Body.Close()
@@ -124,7 +125,7 @@ func TestUpdateGuageHandler(t *testing.T) {
 			request := httptest.NewRequest(test.want.method, test.want.url, nil)
 			w := httptest.NewRecorder()
 
-			UpdateGaugeHandler(w, request)
+			handlers.UpdateGaugeHandler(w, request)
 			res := w.Result()
 			require.Equal(t, test.want.code, res.StatusCode)
 			defer res.Body.Close()

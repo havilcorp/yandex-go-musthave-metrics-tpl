@@ -2,56 +2,74 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
+	"net/http"
 	"runtime"
 	"time"
+
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage"
 )
 
-type Metric struct {
-	gauge   float64
-	counter int64
-}
-
-type MemStorage struct {
-	list map[string]Metric
-}
+var store = storage.MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
 
 func main() {
+
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
-	fmt.Println("Alloc", memStats.Alloc)
-	fmt.Println("BuckHashSys", memStats.BuckHashSys)
-	fmt.Println("Frees", memStats.Frees)
-	fmt.Println("GCCPUFraction", memStats.GCCPUFraction)
-	fmt.Println("GCSys", memStats.GCSys)
-	fmt.Println("HeapAlloc", memStats.HeapAlloc)
-	fmt.Println("HeapIdle", memStats.HeapIdle)
-	fmt.Println("HeapInuse", memStats.HeapInuse)
-	fmt.Println("HeapObjects", memStats.HeapObjects)
-	fmt.Println("HeapReleased", memStats.HeapReleased)
-	fmt.Println("HeapSys", memStats.HeapSys)
-	fmt.Println("LastGC", memStats.LastGC)
-	fmt.Println("Lookups", memStats.Lookups)
-	fmt.Println("MCacheInuse", memStats.MCacheInuse)
-	fmt.Println("MCacheSys", memStats.MCacheSys)
-	fmt.Println("MSpanInuse", memStats.MSpanInuse)
-	fmt.Println("MSpanSys", memStats.MSpanSys)
-	fmt.Println("Mallocs", memStats.Mallocs)
-	fmt.Println("NextGC", memStats.NextGC)
-	fmt.Println("NumForcedGC", memStats.NumForcedGC)
-	fmt.Println("NumGC", memStats.NumGC)
-	fmt.Println("OtherSys", memStats.OtherSys)
-	fmt.Println("PauseTotalNs", memStats.PauseTotalNs)
-	fmt.Println("StackInuse", memStats.StackInuse)
-	fmt.Println("StackSys", memStats.StackSys)
-	fmt.Println("Sys", memStats.Sys)
-	fmt.Println("TotalAlloc", memStats.TotalAlloc)
 
-	a := MemStorage{list: map[string]Metric{}}
-	a.list["Alloc"] = Metric{gauge: 1, counter: 2}
-	fmt.Println(a)
+	i := 0
+	for {
+		time.Sleep(1 * time.Second)
 
-	c := time.Tick(2 * time.Second)
-	for next := range c {
-		fmt.Printf("%v\n", next)
+		if i%2 == 0 {
+			store.AddGauge("Alloc", float64(memStats.Alloc))
+			store.AddGauge("BuckHashSys", float64(memStats.BuckHashSys))
+			store.AddGauge("Frees", float64(memStats.Frees))
+			store.AddGauge("GCCPUFraction", float64(memStats.GCCPUFraction))
+			store.AddGauge("GCSys", float64(memStats.GCSys))
+			store.AddGauge("HeapAlloc", float64(memStats.HeapAlloc))
+			store.AddGauge("HeapIdle", float64(memStats.HeapIdle))
+			store.AddGauge("HeapInuse", float64(memStats.HeapInuse))
+			store.AddGauge("HeapObjects", float64(memStats.HeapObjects))
+			store.AddGauge("HeapReleased", float64(memStats.HeapReleased))
+			store.AddGauge("HeapSys", float64(memStats.HeapSys))
+			store.AddGauge("LastGC", float64(memStats.LastGC))
+			store.AddGauge("Lookups", float64(memStats.Lookups))
+			store.AddGauge("MCacheInuse", float64(memStats.MCacheInuse))
+			store.AddGauge("MSpanSys", float64(memStats.MSpanSys))
+			store.AddGauge("Mallocs", float64(memStats.Mallocs))
+			store.AddGauge("NextGC", float64(memStats.NextGC))
+			store.AddGauge("NumForcedGC", float64(memStats.NumForcedGC))
+			store.AddGauge("NumGC", float64(memStats.NumGC))
+			store.AddGauge("OtherSys", float64(memStats.OtherSys))
+			store.AddGauge("PauseTotalNs", float64(memStats.PauseTotalNs))
+			store.AddGauge("StackInuse", float64(memStats.StackInuse))
+			store.AddGauge("StackSys", float64(memStats.StackSys))
+			store.AddGauge("Sys", float64(memStats.Sys))
+			store.AddGauge("TotalAlloc", float64(memStats.TotalAlloc))
+			store.AddCounter("PollCount", int64(1))
+			store.AddGauge("RandomValue", float64(rand.Intn(10)))
+		}
+
+		if i%10 == 0 && i != 0 {
+			for key, val := range store.Gauge {
+				url := fmt.Sprintf("http://127.0.0.1:8080/update/gauge/%s/%f", key, val)
+				_, err := http.Post(url, "text/plain", nil)
+				if err != nil {
+					panic(err)
+				}
+			}
+
+			for key, val := range store.Counter {
+				url := fmt.Sprintf("http://127.0.0.1:8080/update/counter/%s/%d", key, val)
+				_, err := http.Post(url, "text/plain", nil)
+				if err != nil {
+					panic(err)
+				}
+			}
+
+		}
+
+		i++
 	}
 }
