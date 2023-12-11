@@ -1,18 +1,38 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math/rand"
-	"net/http"
 	"runtime"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage"
 )
 
 var store = storage.MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
+var flagServerAddr string
+var reportInterval int
+var pollInterval int
+
+func parseFlags() {
+	flag.StringVar(&flagServerAddr, "a", "localhost:8080", "address and port to run server")
+	flag.IntVar(&reportInterval, "r", 10, "report interval time in sec")
+	flag.IntVar(&pollInterval, "p", 2, "poll interval time in sec")
+	flag.Parse()
+	// flag.Visit(func(f *flag.Flag) {
+	// 	if f.Name == "r" || f.Name == "p" {
+
+	// 	} else {
+	// 		panic(errors.New("parametr not found"))
+	// 	}
+	// })
+}
 
 func main() {
+
+	parseFlags()
 
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
@@ -21,7 +41,7 @@ func main() {
 	for {
 		time.Sleep(1 * time.Second)
 
-		if i%2 == 0 {
+		if i%pollInterval == 0 {
 			store.AddGauge("Alloc", float64(memStats.Alloc))
 			store.AddGauge("BuckHashSys", float64(memStats.BuckHashSys))
 			store.AddGauge("Frees", float64(memStats.Frees))
@@ -51,18 +71,26 @@ func main() {
 			store.AddGauge("RandomValue", float64(rand.Intn(10)))
 		}
 
-		if i%10 == 0 && i != 0 {
+		client := resty.New()
+
+		if i%reportInterval == 0 && i != 0 {
 			for key, val := range store.Gauge {
-				url := fmt.Sprintf("http://127.0.0.1:8080/update/gauge/%s/%f", key, val)
-				_, err := http.Post(url, "text/plain", nil)
+				_, err := client.R().SetPathParams(map[string]string{
+					"name":    key,
+					"value":   fmt.Sprintf("%f", val),
+					"address": flagServerAddr,
+				}).Post("http://{address}/update/gauge/{name}/{value}")
 				if err != nil {
 					panic(err)
 				}
 			}
 
 			for key, val := range store.Counter {
-				url := fmt.Sprintf("http://127.0.0.1:8080/update/counter/%s/%d", key, val)
-				_, err := http.Post(url, "text/plain", nil)
+				_, err := client.R().SetPathParams(map[string]string{
+					"name":    key,
+					"value":   fmt.Sprintf("%d", val),
+					"address": flagServerAddr,
+				}).Post("http://{address}/update/counter/{name}/{value}")
 				if err != nil {
 					panic(err)
 				}

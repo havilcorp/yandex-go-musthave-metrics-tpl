@@ -3,9 +3,9 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"regexp"
 	"strconv"
 
+	"github.com/go-chi/chi"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage"
 )
 
@@ -13,76 +13,90 @@ var store = storage.MemStorage{Gauge: map[string]float64{}, Counter: map[string]
 
 func UpdateCounterHandler(rw http.ResponseWriter, r *http.Request) {
 
-	if r.Method != "POST" {
-		rw.WriteHeader(http.StatusNotFound)
-		return
-	}
+	marketName := chi.URLParam(r, "name")
+	marketVal := chi.URLParam(r, "value")
 
-	regex := `^\/update\/counter\/([a-zA-Z0-9]+)\/([a-zA-Z0-9.]+)$`
-	tegexPath := regexp.MustCompile(regex).FindStringSubmatch(r.URL.Path)
-
-	if len(tegexPath) != 3 {
-		rw.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	marketName := tegexPath[1]
-	marketVal := tegexPath[2]
-
-	val64, err := strconv.ParseInt(marketVal, 0, 64)
+	marketValInt64, err := strconv.ParseInt(marketVal, 0, 64)
 	if err != nil {
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	rw.WriteHeader(http.StatusOK)
-
-	if err := store.AddCounter(marketName, val64); err != nil {
-		panic(err)
+	if err := store.AddCounter(marketName, marketValInt64); err != nil {
+		// rw.WriteHeader(http.StatusBadRequest)
+		// return
 	}
 
+	rw.WriteHeader(http.StatusOK)
 }
 
 func UpdateGaugeHandler(rw http.ResponseWriter, r *http.Request) {
 
-	if r.Method != "POST" {
-		rw.WriteHeader(http.StatusNotFound)
-		return
-	}
+	marketName := chi.URLParam(r, "name")
+	marketVal := chi.URLParam(r, "value")
 
-	regex := `^\/update\/gauge\/([a-zA-Z0-9]+)\/([a-zA-Z0-9.]+)$`
-	tegexPath := regexp.MustCompile(regex).FindStringSubmatch(r.URL.Path)
-
-	if len(tegexPath) != 3 {
-		rw.WriteHeader(http.StatusNotFound)
-		return
-	}
-
-	marketName := tegexPath[1]
-	marketVal := tegexPath[2]
-
-	val64, err := strconv.ParseFloat(marketVal, 64)
+	marketValFloat64, err := strconv.ParseFloat(marketVal, 64)
 	if err != nil {
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	if err := store.AddGauge(marketName, val64); err != nil {
-		panic(err)
+	if err := store.AddGauge(marketName, marketValFloat64); err != nil {
+		// rw.WriteHeader(http.StatusBadRequest)
+		// return
 	}
 
 	rw.WriteHeader(http.StatusOK)
 
 }
 
-func BadTypeHandler(rw http.ResponseWriter, r *http.Request) {
+func GetCounterMetricHandler(rw http.ResponseWriter, r *http.Request) {
+	marketName := chi.URLParam(r, "name")
+	if val, err := store.GetCounter(marketName); err != nil {
+		rw.WriteHeader(http.StatusNotFound)
+		return
+	} else {
+		rw.WriteHeader(http.StatusOK)
+		rw.Write([]byte(fmt.Sprintf("%d", val)))
+	}
+}
+
+func GetGaugeMetricHandler(rw http.ResponseWriter, r *http.Request) {
+	marketName := chi.URLParam(r, "name")
+	if val, err := store.GetGauge(marketName); err != nil {
+		rw.WriteHeader(http.StatusNotFound)
+		return
+	} else {
+		rw.WriteHeader(http.StatusOK)
+		rw.Write([]byte(fmt.Sprintf("%g", val)))
+	}
+}
+
+func MainPageHandler(rw http.ResponseWriter, r *http.Request) {
+	liCounter := ""
+	for key, item := range store.Counter {
+		liCounter += fmt.Sprintf("<li>%s: %d</li>", key, item)
+	}
+	liGauge := ""
+	for key, item := range store.Gauge {
+		liGauge += fmt.Sprintf("<li>%s: %f</li>", key, item)
+	}
+	html := fmt.Sprintf(`
+	<html>
+		<body>
+			Counters
+			<br/>
+			<ul>%s</ul>
+			<br/>
+			Gauges
+			<br/>
+			<ul>%s</ul>
+		</body>
+	</html>`,
+		liCounter, liGauge)
+	rw.Write([]byte(html))
+}
+
+func BadRequestHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusBadRequest)
-}
-
-func UpdateOtherHandler(rw http.ResponseWriter, r *http.Request) {
-	rw.WriteHeader(http.StatusNotFound)
-}
-
-func MainHandler(rw http.ResponseWriter, r *http.Request) {
-	rw.Write([]byte(fmt.Sprint(store.Gauge) + fmt.Sprint(store.Counter)))
 }
