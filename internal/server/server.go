@@ -1,6 +1,7 @@
 package server
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"time"
@@ -10,12 +11,12 @@ import (
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers"
 )
 
-// var flagRunAddr string
+var flagRunAddr string
 
-// func parseFlags() {
-// 	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "address and port to run server")
-// 	flag.Parse()
-// }
+func parseFlags() {
+	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "address and port to run server")
+	flag.Parse()
+}
 
 func CreateServer() {
 	r := chi.NewRouter()
@@ -40,15 +41,10 @@ func CreateServer() {
 		r.Post("/{all}/{name}/{value}", handlers.BadRequestHandler)
 	})
 
-	// parseFlags()
+	parseFlags()
 
-	// fmt.Println("Running server on", flagRunAddr)
-	// if err := http.ListenAndServe(flagRunAddr, r); err != nil {
-	// 	panic(err)
-	// }
-
-	fmt.Println("Running server on", "8080")
-	if err := http.ListenAndServe(":8080", r); err != nil {
+	fmt.Println("Running server on", flagRunAddr)
+	if err := http.ListenAndServe(flagRunAddr, r); err != nil {
 		panic(err)
 	}
 }
