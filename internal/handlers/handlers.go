@@ -6,10 +6,10 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memstorage"
 )
 
-var store = storage.MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
+var store = memstorage.MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
 
 func UpdateCounterHandler(rw http.ResponseWriter, r *http.Request) {
 
@@ -23,8 +23,8 @@ func UpdateCounterHandler(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := store.AddCounter(marketName, marketValInt64); err != nil {
-		// rw.WriteHeader(http.StatusBadRequest)
-		// return
+		rw.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	rw.WriteHeader(http.StatusOK)
@@ -42,8 +42,8 @@ func UpdateGaugeHandler(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := store.AddGauge(marketName, marketValFloat64); err != nil {
-		// rw.WriteHeader(http.StatusBadRequest)
-		// return
+		rw.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	rw.WriteHeader(http.StatusOK)

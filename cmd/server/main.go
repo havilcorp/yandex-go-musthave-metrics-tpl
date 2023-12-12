@@ -5,5 +5,8 @@ import (
 )
 
 func main() {
-	server.CreateServer()
+	err := server.StartServer()
+	if err != nil {
+		panic(err)
+	}
 }

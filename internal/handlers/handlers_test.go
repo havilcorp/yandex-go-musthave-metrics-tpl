@@ -101,3 +101,99 @@ func TestUpdateGaugeHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestGetCounterMetricHandler(t *testing.T) {
+	tests := []struct {
+		name string
+		want Want
+	}{
+		{
+			name: "Bad value",
+			want: Want{
+				method: http.MethodPost,
+				code:   404,
+				req: AddChiURLParams(httptest.NewRequest("GET", "/counter/Undefined", nil), map[string]string{
+					"name": "Undefined",
+				}),
+			},
+		},
+		{
+			name: "Good",
+			want: Want{
+				method: http.MethodPost,
+				code:   200,
+				req: AddChiURLParams(httptest.NewRequest("GET", "/counter/Alloc", nil), map[string]string{
+					"name": "Alloc",
+				}),
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			GetCounterMetricHandler(w, test.want.req)
+			res := w.Result()
+			require.Equal(t, test.want.code, res.StatusCode)
+			defer res.Body.Close()
+		})
+	}
+}
+
+func TestGetGaugeMetricHandler(t *testing.T) {
+	tests := []struct {
+		name string
+		want Want
+	}{
+		{
+			name: "Bad value",
+			want: Want{
+				method: http.MethodPost,
+				code:   404,
+				req: AddChiURLParams(httptest.NewRequest("GET", "/gauge/Undefined", nil), map[string]string{
+					"name": "Undefined",
+				}),
+			},
+		},
+		{
+			name: "Good",
+			want: Want{
+				method: http.MethodPost,
+				code:   200,
+				req: AddChiURLParams(httptest.NewRequest("GET", "/gauge/Alloc", nil), map[string]string{
+					"name": "Alloc",
+				}),
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			GetGaugeMetricHandler(w, test.want.req)
+			res := w.Result()
+			require.Equal(t, test.want.code, res.StatusCode)
+			defer res.Body.Close()
+		})
+	}
+}
+
+func TestMainPageHandler(t *testing.T) {
+	t.Run("MainPage", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
+		MainPageHandler(w, request)
+		res := w.Result()
+		require.Equal(t, 200, res.StatusCode)
+		defer res.Body.Close()
+	})
+}
+
+func TestBadRequestHandler(t *testing.T) {
+	t.Run("BadRequest", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		request := httptest.NewRequest(http.MethodGet, "/", nil)
+		BadRequestHandler(w, request)
+		res := w.Result()
+		require.Equal(t, 400, res.StatusCode)
+		defer res.Body.Close()
+	})
+}

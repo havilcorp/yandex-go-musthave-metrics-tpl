@@ -1,24 +1,16 @@
 package server
 
 import (
-	"flag"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers"
 )
 
-var flagRunAddr string
-
-func parseFlags() {
-	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "address and port to run server")
-	flag.Parse()
-}
-
-func CreateServer() {
+func StartServer() error {
 	r := chi.NewRouter()
 
 	// r.Use(middleware.RequestID)
@@ -41,10 +33,9 @@ func CreateServer() {
 		r.Post("/{all}/{name}/{value}", handlers.BadRequestHandler)
 	})
 
-	parseFlags()
+	var serverAddress string
 
-	fmt.Println("Running server on", flagRunAddr)
-	if err := http.ListenAndServe(flagRunAddr, r); err != nil {
-		panic(err)
-	}
+	config.WriteServerConfig(&serverAddress)
+
+	return http.ListenAndServe(serverAddress, r)
 }
