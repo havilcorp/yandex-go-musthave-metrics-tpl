@@ -13,6 +13,10 @@ func WriteAgentConfig(flagServerAddr *string, reportInterval *int, pollInterval 
 
 	flag.Parse()
 
+	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
+		*flagServerAddr = envAddress
+	}
+
 	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
 		envReportIntervalVal, err := strconv.Atoi(envReportInterval)
 		if err != nil {
