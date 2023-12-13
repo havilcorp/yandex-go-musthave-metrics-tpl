@@ -1,14 +1,10 @@
 package memstorage
 
-import (
-	"errors"
-)
-
 type Repositories interface {
 	AddCounter(key string, counter int64) error
 	AddGauge(key string, gauge float64) error
-	GetCounter(key string) (int64, error)
-	GetGauge(key string) (float64, error)
+	GetCounter(key string) (int64, bool)
+	GetGauge(key string) (float64, bool)
 	GetAllCounters() map[string]int64
 	GetAllGauge() map[string]float64
 }
@@ -64,20 +60,14 @@ func (ms MemStorage) AddCounter(key string, counter int64) error {
 	return nil
 }
 
-func (ms MemStorage) GetCounter(key string) (int64, error) {
-	if val, ok := ms.Counter[key]; ok {
-		return val, nil
-	} else {
-		return 0, errors.New("metric not found")
-	}
+func (ms MemStorage) GetCounter(key string) (int64, bool) {
+	val, ok := ms.Counter[key]
+	return val, ok
 }
 
-func (ms MemStorage) GetGauge(key string) (float64, error) {
-	if val, ok := ms.Gauge[key]; ok {
-		return val, nil
-	} else {
-		return 0, errors.New("metric not found")
-	}
+func (ms MemStorage) GetGauge(key string) (float64, bool) {
+	val, ok := ms.Gauge[key]
+	return val, ok
 }
 
 func (ms MemStorage) GetAllCounters() map[string]int64 {

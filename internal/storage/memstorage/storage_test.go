@@ -55,8 +55,8 @@ func TestAddGauge(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			val, err := store.GetGauge(test.want.wantKey)
-			require.Equal(t, err != nil, test.want.isError)
+			val, ok := store.GetGauge(test.want.wantKey)
+			require.Equal(t, !ok, test.want.isError)
 			if test.want.isError == false {
 				require.Equal(t, test.want.wantVal, val)
 			}
@@ -97,8 +97,8 @@ func TestAddCounter(t *testing.T) {
 			if err != nil {
 				panic(err)
 			}
-			val, err := store.GetCounter(test.want.wantKey)
-			require.Equal(t, err != nil, test.want.isError)
+			val, ok := store.GetCounter(test.want.wantKey)
+			require.Equal(t, !ok, test.want.isError)
 			if test.want.isError == false {
 				require.Equal(t, test.want.wantVal, val)
 			}

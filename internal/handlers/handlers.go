@@ -52,23 +52,21 @@ func UpdateGaugeHandler(rw http.ResponseWriter, r *http.Request) {
 
 func GetCounterMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	marketName := chi.URLParam(r, "name")
-	if val, err := store.GetCounter(marketName); err != nil {
-		rw.WriteHeader(http.StatusNotFound)
-		return
-	} else {
+	if val, ok := store.GetCounter(marketName); ok {
 		rw.WriteHeader(http.StatusOK)
 		rw.Write([]byte(fmt.Sprintf("%d", val)))
+	} else {
+		rw.WriteHeader(http.StatusNotFound)
 	}
 }
 
 func GetGaugeMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	marketName := chi.URLParam(r, "name")
-	if val, err := store.GetGauge(marketName); err != nil {
-		rw.WriteHeader(http.StatusNotFound)
-		return
-	} else {
+	if val, ok := store.GetGauge(marketName); ok {
 		rw.WriteHeader(http.StatusOK)
 		rw.Write([]byte(fmt.Sprintf("%g", val)))
+	} else {
+		rw.WriteHeader(http.StatusNotFound)
 	}
 }
 

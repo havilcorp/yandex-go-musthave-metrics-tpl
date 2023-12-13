@@ -43,7 +43,7 @@ func WriteMetric(ms memstorage.Repositories) {
 	ms.AddGauge("RandomValue", float64(rand.Intn(10)))
 }
 
-func SendMetric(address string, ms memstorage.Repositories) {
+func SendMetric(address string, ms memstorage.Repositories) error {
 	client := resty.New()
 
 	gauges := ms.GetAllGauge()
@@ -56,7 +56,7 @@ func SendMetric(address string, ms memstorage.Repositories) {
 			"address": address,
 		}).Post("http://{address}/update/gauge/{name}/{value}")
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
 
@@ -67,7 +67,8 @@ func SendMetric(address string, ms memstorage.Repositories) {
 			"address": address,
 		}).Post("http://{address}/update/counter/{name}/{value}")
 		if err != nil {
-			panic(err)
+			return err
 		}
 	}
+	return nil
 }

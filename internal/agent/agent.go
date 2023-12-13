@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
@@ -18,34 +17,18 @@ var pollInterval int
 func StartAgent() error {
 	config.WriteAgentConfig(&serverAddress, &reportInterval, &pollInterval)
 
-	timer := time.NewTicker(1 * time.Second)
-	stop := make(chan bool)
+	timerInterval := time.NewTicker(time.Duration(reportInterval) * time.Second)
+	timerPool := time.NewTicker(time.Duration(pollInterval) * time.Second)
 
-	go func() {
-		defer func() { stop <- true }()
-		i := 0
-		for {
-			select {
-			case <-timer.C:
-				time.Sleep(1 * time.Second)
-
-				if i%pollInterval == 0 {
-					mertic.WriteMetric(store)
-				}
-
-				if i%reportInterval == 0 && i != 0 {
-					mertic.SendMetric(serverAddress, store)
-					i = 0
-				}
-
-				i++
-
-			case <-stop:
-				fmt.Println("Закрытие горутины")
-				return
+	for {
+		select {
+		case <-timerPool.C:
+			mertic.WriteMetric(store)
+		case <-timerInterval.C:
+			err := mertic.SendMetric(serverAddress, store)
+			if err != nil {
+				return err
 			}
 		}
-	}()
-
-	return nil
+	}
 }
