@@ -2,23 +2,28 @@ package server
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/logger"
+	"go.uber.org/zap"
 )
 
 func StartServer() error {
+
+	zapLogger, err := zap.NewDevelopment()
+	if err != nil {
+		return err
+	}
+	defer zapLogger.Sync()
+	sugar := *zapLogger.Sugar()
+
 	r := chi.NewRouter()
 
-	// r.Use(middleware.RequestID)
-	// r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	// r.Use(middleware.Timeout(60 * time.Second))
 
-	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(logger.WithLogging)
 
 	r.Get("/", handlers.MainPageHandler)
 
@@ -36,6 +41,11 @@ func StartServer() error {
 	var serverAddress string
 
 	config.WriteServerConfig(&serverAddress)
+
+	sugar.Infow(
+		"Starting server",
+		"addr", serverAddress,
+	)
 
 	return http.ListenAndServe(serverAddress, r)
 }
