@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -35,15 +34,12 @@ type (
 // }
 
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
-	fmt.Println("Write")
 	size, err := r.ResponseWriter.Write(b)
 	r.responseData.size += size
 	return size, err
 }
 
 func (r *loggingResponseWriter) WriteHeader(statusCode int) {
-	fmt.Println("WriteHeader")
-	fmt.Println("status", statusCode)
 	r.ResponseWriter.WriteHeader(statusCode)
 	r.responseData.status = statusCode
 }

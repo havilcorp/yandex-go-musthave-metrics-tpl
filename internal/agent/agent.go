@@ -17,18 +17,40 @@ var pollInterval int
 func StartAgent() error {
 	config.WriteAgentConfig(&serverAddress, &reportInterval, &pollInterval)
 
-	timerInterval := time.NewTicker(time.Duration(reportInterval) * time.Second)
-	timerPool := time.NewTicker(time.Duration(pollInterval) * time.Second)
+	// timerInterval := time.NewTicker(time.Duration(reportInterval) * time.Second)
+	// timerPool := time.NewTicker(time.Duration(pollInterval) * time.Second)
+	timerPool := time.NewTicker(time.Duration(1) * time.Second)
+	i := 0
 
 	for {
 		select {
 		case <-timerPool.C:
-			mertic.WriteMetric(store)
-		case <-timerInterval.C:
-			err := mertic.SendMetric(serverAddress, store)
-			if err != nil {
-				return err
+			if i%pollInterval == 0 {
+				// fmt.Println("WriteMetric")
+				mertic.WriteMetric(store)
 			}
+			if i%reportInterval == 0 {
+				// fmt.Println("== SendMetric")
+				err := mertic.SendMetric(serverAddress, store)
+				if err != nil {
+					// return err
+				}
+			}
+			i++
 		}
+
+		// for {
+		// 	select {
+		// 	case <-timerPool.C:
+		// 		fmt.Println("WriteMetric")
+		// 		mertic.WriteMetric(store)
+		// 	case <-timerInterval.C:
+		// 		fmt.Println("== SendMetric")
+		// 		err := mertic.SendMetric(serverAddress, store)
+		// 		if err != nil {
+		// 			return err
+		// 		}
+		// 	}
+
 	}
 }

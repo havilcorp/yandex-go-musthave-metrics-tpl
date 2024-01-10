@@ -28,11 +28,13 @@ func StartServer() error {
 	r.Get("/", handlers.MainPageHandler)
 
 	r.Route("/value", func(r chi.Router) {
+		r.Post("/", handlers.GetMetricHandler)
 		r.Get("/counter/{name}", handlers.GetCounterMetricHandler)
 		r.Get("/gauge/{name}", handlers.GetGaugeMetricHandler)
 	})
 
 	r.Route("/update", func(r chi.Router) {
+		r.Post("/", handlers.UpdateHandler)
 		r.Post("/counter/{name}/{value}", handlers.UpdateCounterHandler)
 		r.Post("/gauge/{name}/{value}", handlers.UpdateGaugeHandler)
 		r.Post("/{all}/{name}/{value}", handlers.BadRequestHandler)

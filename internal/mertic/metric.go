@@ -28,6 +28,8 @@ func WriteMetric(ms memstorage.Repositories) {
 	ms.AddGauge("LastGC", float64(memStats.LastGC))
 	ms.AddGauge("Lookups", float64(memStats.Lookups))
 	ms.AddGauge("MCacheInuse", float64(memStats.MCacheInuse))
+	ms.AddGauge("MCacheSys", float64(memStats.MCacheSys))
+	ms.AddGauge("MSpanInuse", float64(memStats.MSpanInuse))
 	ms.AddGauge("MSpanSys", float64(memStats.MSpanSys))
 	ms.AddGauge("Mallocs", float64(memStats.Mallocs))
 	ms.AddGauge("NextGC", float64(memStats.NextGC))
@@ -50,25 +52,30 @@ func SendMetric(address string, ms memstorage.Repositories) error {
 	counters := ms.GetAllCounters()
 
 	for key, val := range gauges {
-		_, err := client.R().SetPathParams(map[string]string{
-			"name":    key,
-			"value":   fmt.Sprintf("%f", val),
-			"address": address,
-		}).Post("http://{address}/update/gauge/{name}/{value}")
+		url := fmt.Sprintf("http://%s/update", address)
+		_, err := client.NewRequest().SetBody(map[string]interface{}{"id": key, "type": "gauge", "value": val}).Post(url)
 		if err != nil {
 			return err
 		}
+
+		// _, err := client.R().SetPathParams(map[string]string{
+		// 	"name":    key,
+		// 	"value":   fmt.Sprintf("%f", val),
+		// 	"address": address,
+		// }).Post("http://{address}/update/gauge/{name}/{value}")
 	}
 
 	for key, val := range counters {
-		_, err := client.R().SetPathParams(map[string]string{
-			"name":    key,
-			"value":   fmt.Sprintf("%d", val),
-			"address": address,
-		}).Post("http://{address}/update/counter/{name}/{value}")
+		url := fmt.Sprintf("http://%s/update", address)
+		_, err := client.NewRequest().SetBody(map[string]interface{}{"id": key, "type": "counter", "delta": val}).Post(url)
 		if err != nil {
 			return err
 		}
+		// _, err := client.R().SetPathParams(map[string]string{
+		// 	"name":    key,
+		// 	"value":   fmt.Sprintf("%d", val),
+		// 	"address": address,
+		// }).Post("http://{address}/update/counter/{name}/{value}")
 	}
 	return nil
 }
