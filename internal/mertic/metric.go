@@ -1,6 +1,8 @@
 package mertic
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"math/rand"
 	"runtime"
@@ -41,8 +43,8 @@ func WriteMetric(ms memstorage.Repositories) {
 	ms.AddGauge("StackSys", float64(memStats.StackSys))
 	ms.AddGauge("Sys", float64(memStats.Sys))
 	ms.AddGauge("TotalAlloc", float64(memStats.TotalAlloc))
-	ms.AddCounter("PollCount", int64(1))
 	ms.AddGauge("RandomValue", float64(rand.Intn(10)))
+	ms.AddCounter("PollCount", int64(1))
 }
 
 func SendMetric(address string, ms memstorage.Repositories) error {
@@ -53,29 +55,37 @@ func SendMetric(address string, ms memstorage.Repositories) error {
 
 	for key, val := range gauges {
 		url := fmt.Sprintf("http://%s/update", address)
-		_, err := client.NewRequest().SetBody(map[string]interface{}{"id": key, "type": "gauge", "value": val}).Post(url)
+		buf := bytes.NewBuffer(nil)
+		zb := gzip.NewWriter(buf)
+		_, err := zb.Write([]byte(fmt.Sprintf(`{"id":"%s","type":"gauge","value":%f}`, key, val)))
 		if err != nil {
+			fmt.Println(err)
 			return err
 		}
-
-		// _, err := client.R().SetPathParams(map[string]string{
-		// 	"name":    key,
-		// 	"value":   fmt.Sprintf("%f", val),
-		// 	"address": address,
-		// }).Post("http://{address}/update/gauge/{name}/{value}")
+		zb.Close()
+		r := client.NewRequest()
+		r.Header.Set("Content-Encoding", "gzip")
+		r.SetBody(buf)
+		_, err = r.Post(url)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
 	}
 
 	for key, val := range counters {
 		url := fmt.Sprintf("http://%s/update", address)
-		_, err := client.NewRequest().SetBody(map[string]interface{}{"id": key, "type": "counter", "delta": val}).Post(url)
+		buf := bytes.NewBuffer(nil)
+		zb := gzip.NewWriter(buf)
+		zb.Write([]byte(fmt.Sprintf(`{"id":"%s","type":"counter","delta":%d}`, key, val)))
+		zb.Close()
+		r := client.NewRequest()
+		r.Header.Set("Content-Encoding", "gzip")
+		r.SetBody(buf)
+		_, err := r.Post(url)
 		if err != nil {
 			return err
 		}
-		// _, err := client.R().SetPathParams(map[string]string{
-		// 	"name":    key,
-		// 	"value":   fmt.Sprintf("%d", val),
-		// 	"address": address,
-		// }).Post("http://{address}/update/counter/{name}/{value}")
 	}
 	return nil
 }

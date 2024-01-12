@@ -22,7 +22,6 @@ func UpdateHandler(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.MType == models.TypeMetricsCounter {
-		fmt.Println("UpdateHandler", req.ID, req.MType, *req.Delta, 0)
 		if err := store.AddCounter(req.ID, *req.Delta); err != nil {
 			rw.WriteHeader(http.StatusBadRequest)
 			return
@@ -43,7 +42,6 @@ func UpdateHandler(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if req.MType == models.TypeMetricsGauge {
-		fmt.Println("UpdateHandler", req.ID, req.MType, 0, *req.Value)
 		if err := store.AddGauge(req.ID, *req.Value); err != nil {
 			rw.WriteHeader(http.StatusBadRequest)
 			return
@@ -114,7 +112,6 @@ func GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.MType == models.TypeMetricsCounter {
-		fmt.Println("GetMetricHandler", req.ID, req.MType)
 		if val, ok := store.GetCounter(req.ID); ok {
 			rw.WriteHeader(http.StatusOK)
 			resp := models.MetricsRequest{
@@ -131,7 +128,6 @@ func GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if req.MType == models.TypeMetricsGauge {
-		fmt.Println("GetMetricHandler", req.ID, req.MType)
 		if val, ok := store.GetGauge(req.ID); ok {
 			rw.WriteHeader(http.StatusOK)
 			resp := models.MetricsRequest{
@@ -170,6 +166,7 @@ func GetGaugeMetricHandler(rw http.ResponseWriter, r *http.Request) {
 }
 
 func MainPageHandler(rw http.ResponseWriter, r *http.Request) {
+	rw.Header().Set("Content-Type", "text/html")
 	liCounter := ""
 	for key, item := range store.Counter {
 		liCounter += fmt.Sprintf("<li>%s: %d</li>", key, item)

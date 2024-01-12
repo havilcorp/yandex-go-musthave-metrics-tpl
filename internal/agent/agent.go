@@ -26,15 +26,13 @@ func StartAgent() error {
 		select {
 		case <-timerPool.C:
 			if i%pollInterval == 0 {
-				// fmt.Println("WriteMetric")
 				mertic.WriteMetric(store)
 			}
 			if i%reportInterval == 0 {
-				// fmt.Println("== SendMetric")
-				err := mertic.SendMetric(serverAddress, store)
-				if err != nil {
-					// return err
-				}
+				mertic.SendMetric(serverAddress, store)
+				// if err != nil {
+				// 	return err
+				// }
 			}
 			i++
 		}

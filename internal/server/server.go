@@ -7,6 +7,7 @@ import (
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/logger"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/middleware"
 	"go.uber.org/zap"
 )
 
@@ -24,6 +25,7 @@ func StartServer() error {
 	// r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Use(logger.WithLogging)
+	r.Use(middleware.GzipMiddleware)
 
 	r.Get("/", handlers.MainPageHandler)
 
