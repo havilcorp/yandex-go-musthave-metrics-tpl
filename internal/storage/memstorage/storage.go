@@ -45,11 +45,11 @@ func (ms *MemStorage) SaveToFile() error {
 		return err
 	}
 	defer file.Close()
-	allDataJson, err := json.Marshal(ms)
+	allDataJSON, err := json.Marshal(ms)
 	if err != nil {
 		return err
 	}
-	file.Write([]byte(allDataJson))
+	file.Write([]byte(allDataJSON))
 	return nil
 }
 
