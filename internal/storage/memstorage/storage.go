@@ -1,5 +1,10 @@
 package memstorage
 
+import (
+	"encoding/json"
+	"os"
+)
+
 type Repositories interface {
 	AddCounter(key string, counter int64) error
 	AddGauge(key string, gauge float64) error
@@ -7,73 +12,99 @@ type Repositories interface {
 	GetGauge(key string) (float64, bool)
 	GetAllCounters() map[string]int64
 	GetAllGauge() map[string]float64
+	SetWfiteFileName(filename string)
+	SetSyncWrite(isSync bool)
+	SaveToFile() error
+	LoadFromFile() error
 }
 
 type MemStorage struct {
-	Gauge   map[string]float64
-	Counter map[string]int64
+	Gauge     map[string]float64
+	Counter   map[string]int64
+	syncWrite bool
+	fileName  string
 }
 
-// type Guage string
+func NewMemStorage(syncWrite bool) *MemStorage {
+	ms := MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
+	ms.SetSyncWrite(syncWrite)
+	return &ms
+}
 
-// var availableMtricTypes = []string{
-// 	"Alloc",
-// 	"BuckHashSys",
-// 	"Frees",
-// 	"GCCPUFraction",
-// 	"GCSys",
-// 	"HeapAlloc",
-// 	"HeapIdle",
-// 	"HeapInuse",
-// 	"HeapObjects",
-// 	"HeapReleased",
-// 	"HeapSys",
-// 	"LastGC",
-// 	"Lookups",
-// 	"MCacheInuse",
-// 	"MSpanSys",
-// 	"Mallocs",
-// 	"NextGC",
-// 	"NumForcedGC",
-// 	"NumGC",
-// 	"OtherSys",
-// 	"PauseTotalNs",
-// 	"StackInuse",
-// 	"StackSys",
-// 	"Sys",
-// 	"TotalAlloc",
-// 	"PollCount",
-// 	"RandomValue",
-// }
+func (ms *MemStorage) SetWfiteFileName(filename string) {
+	ms.fileName = filename
+}
 
-func (ms MemStorage) AddGauge(key string, gauge float64) error {
-	ms.Gauge[key] = gauge
+func (ms *MemStorage) SetSyncWrite(isSync bool) {
+	ms.syncWrite = isSync
+}
+
+func (ms *MemStorage) SaveToFile() error {
+	file, err := os.OpenFile(ms.fileName, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	allDataJson, err := json.Marshal(ms)
+	if err != nil {
+		return err
+	}
+	file.Write([]byte(allDataJson))
 	return nil
 }
 
-func (ms MemStorage) AddCounter(key string, counter int64) error {
+func (ms *MemStorage) LoadFromFile() error {
+	file, err := os.ReadFile(ms.fileName)
+	if err != nil {
+		return err
+	}
+	memStorage := &MemStorage{}
+	if err := json.Unmarshal(file, memStorage); err != nil {
+		return err
+	}
+	for key, value := range memStorage.Counter {
+		ms.AddCounter(key, value)
+	}
+	for key, value := range memStorage.Gauge {
+		ms.AddGauge(key, value)
+	}
+	return nil
+}
+
+func (ms *MemStorage) AddGauge(key string, gauge float64) error {
+	ms.Gauge[key] = gauge
+	if ms.syncWrite {
+		ms.SaveToFile()
+	}
+	return nil
+}
+
+func (ms *MemStorage) AddCounter(key string, counter int64) error {
 	if val, ok := ms.Counter[key]; ok {
 		ms.Counter[key] = val + counter
 	} else {
 		ms.Counter[key] = counter
 	}
+	if ms.syncWrite {
+		ms.SaveToFile()
+	}
 	return nil
 }
 
-func (ms MemStorage) GetCounter(key string) (int64, bool) {
+func (ms *MemStorage) GetCounter(key string) (int64, bool) {
 	val, ok := ms.Counter[key]
 	return val, ok
 }
 
-func (ms MemStorage) GetGauge(key string) (float64, bool) {
+func (ms *MemStorage) GetGauge(key string) (float64, bool) {
 	val, ok := ms.Gauge[key]
 	return val, ok
 }
 
-func (ms MemStorage) GetAllCounters() map[string]int64 {
+func (ms *MemStorage) GetAllCounters() map[string]int64 {
 	return ms.Counter
 }
 
-func (ms MemStorage) GetAllGauge() map[string]float64 {
+func (ms *MemStorage) GetAllGauge() map[string]float64 {
 	return ms.Gauge
 }

@@ -1,10 +1,10 @@
-package logger
+package middleware
 
 import (
 	"net/http"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/sirupsen/logrus"
 )
 
 // type ResponseWriter interface {
@@ -44,19 +44,9 @@ func (r *loggingResponseWriter) WriteHeader(statusCode int) {
 	r.responseData.status = statusCode
 }
 
-func WithLogging(h http.Handler) http.Handler {
-
-	logger, err := zap.NewDevelopment()
-	if err != nil {
-		panic(err)
-	}
-	defer logger.Sync()
-	sugar := *logger.Sugar()
-	sugar.Infoln()
-
+func LogMiddleware(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-
 		responseData := &responseData{
 			status: 200,
 			size:   0,
@@ -66,15 +56,7 @@ func WithLogging(h http.Handler) http.Handler {
 			responseData:   responseData,
 		}
 		h.ServeHTTP(&lw, r)
-
 		duration := time.Since(start)
-
-		sugar.Infoln(
-			"uri", r.RequestURI,
-			"method", r.Method,
-			"status", responseData.status, // получаем перехваченный код статуса ответа
-			"duration", duration,
-			"size", responseData.size, // получаем перехваченный размер ответа
-		)
+		logrus.Infof("%s %s (%d) %s %d byte", r.Method, r.RequestURI, responseData.status, duration, responseData.size)
 	})
 }

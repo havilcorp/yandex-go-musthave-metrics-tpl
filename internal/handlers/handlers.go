@@ -11,7 +11,11 @@ import (
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memstorage"
 )
 
-var store = memstorage.MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
+var store memstorage.MemStorage
+
+func SetStore(storage memstorage.MemStorage) {
+	store = storage
+}
 
 func UpdateHandler(rw http.ResponseWriter, r *http.Request) {
 	var req models.MetricsRequest
@@ -168,11 +172,11 @@ func GetGaugeMetricHandler(rw http.ResponseWriter, r *http.Request) {
 func MainPageHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "text/html")
 	liCounter := ""
-	for key, item := range store.Counter {
+	for key, item := range store.GetAllCounters() {
 		liCounter += fmt.Sprintf("<li>%s: %d</li>", key, item)
 	}
 	liGauge := ""
-	for key, item := range store.Gauge {
+	for key, item := range store.GetAllGauge() {
 		liGauge += fmt.Sprintf("<li>%s: %f</li>", key, item)
 	}
 	html := fmt.Sprintf(`

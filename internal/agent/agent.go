@@ -8,7 +8,7 @@ import (
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memstorage"
 )
 
-var store = memstorage.MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
+var store = memstorage.NewMemStorage(false)
 
 var serverAddress string
 var reportInterval int

@@ -35,11 +35,33 @@ func WriteAgentConfig(flagServerAddr *string, reportInterval *int, pollInterval 
 
 }
 
-func WriteServerConfig(serverAddress *string) {
-	flag.StringVar(serverAddress, "a", "localhost:8080", "address and port to run server")
-	flag.Parse()
-
-	if envRunAddr := os.Getenv("ADDRESS"); envRunAddr != "" {
-		*serverAddress = envRunAddr
+func WriteServerConfig(serverAddress *string, storeInterval *int, fileStoragePath *string, isRestore *bool) {
+	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
+		*serverAddress = envServerAddress
+	} else {
+		flag.StringVar(serverAddress, "a", "localhost:8080", "address and port to run server")
 	}
+
+	if envStoreInterval := os.Getenv("STORE_INTERVAL"); envStoreInterval != "" {
+		envStoreIntervalVal, err := strconv.Atoi(envStoreInterval)
+		if err != nil {
+			panic(err)
+		}
+		*storeInterval = envStoreIntervalVal
+	} else {
+		flag.IntVar(storeInterval, "i", 300, "store save interval time in sec")
+	}
+
+	if envFileStoragePath := os.Getenv("FILE_STORAGE_PATH"); envFileStoragePath != "" {
+		*fileStoragePath = envFileStoragePath
+	} else {
+		flag.StringVar(fileStoragePath, "f", "/tmp/metrics-db.json", "file store path save")
+	}
+
+	if envIsRestore := os.Getenv("RESTORE"); envIsRestore != "" {
+		*isRestore = envIsRestore == "true"
+	} else {
+		flag.BoolVar(isRestore, "r", true, "is restore")
+	}
+	flag.Parse()
 }

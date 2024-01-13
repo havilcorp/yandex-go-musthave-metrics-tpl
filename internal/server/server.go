@@ -2,29 +2,44 @@ package server
 
 import (
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/logger"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/middleware"
-	"go.uber.org/zap"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memstorage"
+	"github.com/sirupsen/logrus"
 )
 
 func StartServer() error {
 
-	zapLogger, err := zap.NewDevelopment()
-	if err != nil {
-		return err
+	var serverAddress string
+	var storeInterval int
+	var fileStoragePath string
+	var isRestore bool
+
+	config.WriteServerConfig(&serverAddress, &storeInterval, &fileStoragePath, &isRestore)
+
+	logrus.Infof("StoreInterval: %d", storeInterval)
+	logrus.Infof("FileStoragePath: %s", fileStoragePath)
+	logrus.Infof("IsRestore: %t", isRestore)
+
+	store := *memstorage.NewMemStorage(storeInterval == 0)
+	store.SetWfiteFileName(fileStoragePath)
+	if isRestore {
+		store.LoadFromFile()
 	}
-	defer zapLogger.Sync()
-	sugar := *zapLogger.Sugar()
+	handlers.SetStore(store)
 
 	r := chi.NewRouter()
 
 	// r.Use(middleware.Timeout(60 * time.Second))
 
-	r.Use(logger.WithLogging)
+	r.Use(middleware.LogMiddleware)
 	r.Use(middleware.GzipMiddleware)
 
 	r.Get("/", handlers.MainPageHandler)
@@ -42,14 +57,36 @@ func StartServer() error {
 		r.Post("/{all}/{name}/{value}", handlers.BadRequestHandler)
 	})
 
-	var serverAddress string
+	go http.ListenAndServe(serverAddress, r)
+	logrus.Infof("Starting server on %s", serverAddress)
 
-	config.WriteServerConfig(&serverAddress)
+	var ticker *time.Ticker
+	stopTimer := make(chan bool)
 
-	sugar.Infow(
-		"Starting server",
-		"addr", serverAddress,
-	)
+	if storeInterval != 0 {
+		ticker = time.NewTicker(time.Second * time.Duration(storeInterval))
+		go func() {
+			defer func() { stopTimer <- true }()
+			for {
+				select {
+				case <-ticker.C:
+					store.SaveToFile()
+				case <-stopTimer:
+					return
+				}
+			}
+		}()
+	}
 
-	return http.ListenAndServe(serverAddress, r)
+	terminateSignals := make(chan os.Signal, 1)
+	signal.Notify(terminateSignals, syscall.SIGINT)
+	<-terminateSignals
+	if ticker != nil {
+		ticker.Stop()
+		stopTimer <- true
+	}
+	store.SaveToFile()
+	logrus.Info("Приложение остановлено")
+
+	return nil
 }
