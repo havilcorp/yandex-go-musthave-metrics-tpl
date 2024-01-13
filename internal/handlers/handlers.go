@@ -11,7 +11,7 @@ import (
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memstorage"
 )
 
-var store memstorage.MemStorage
+var store = *memstorage.NewMemStorage(false)
 
 func SetStore(storage memstorage.MemStorage) {
 	store = storage
