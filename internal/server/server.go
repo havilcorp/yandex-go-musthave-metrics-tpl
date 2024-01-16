@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 	"os"
 	"os/signal"
@@ -30,14 +29,12 @@ func StartServer() error {
 	logrus.Infof("IsRestore: %t", isRestore)
 
 	r := chi.NewRouter()
-	server := &http.Server{Addr: serverAddress, Handler: r}
 
 	store := *memstorage.NewMemStorage(storeInterval == 0)
 	store.SetWfiteFileName(fileStoragePath)
 	if isRestore {
 		if err := store.LoadFromFile(); err != nil {
 			logrus.Info(err)
-			return err
 		}
 	}
 	handlers.SetStore(store)
@@ -64,7 +61,7 @@ func StartServer() error {
 
 	go func() {
 		logrus.Infof("Starting server on %s", serverAddress)
-		if err := server.ListenAndServe(); err != nil {
+		if err := http.ListenAndServe(serverAddress, r); err != nil {
 			logrus.Info(err)
 		}
 	}()
@@ -85,7 +82,6 @@ func StartServer() error {
 	terminateSignals := make(chan os.Signal, 1)
 	signal.Notify(terminateSignals, syscall.SIGINT)
 	<-terminateSignals
-	server.Shutdown(context.Background())
 	if timeTicker != nil {
 		timeTicker.Stop()
 	}
