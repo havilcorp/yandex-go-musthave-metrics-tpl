@@ -40,16 +40,11 @@ func (ms *MemStorage) SetSyncWrite(isSync bool) {
 }
 
 func (ms *MemStorage) SaveToFile() error {
-	file, err := os.OpenFile(ms.fileName, os.O_WRONLY|os.O_CREATE, 0666)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
 	allDataJSON, err := json.Marshal(ms)
 	if err != nil {
 		return err
 	}
-	if _, err := file.Write([]byte(allDataJSON)); err != nil {
+	if err := os.WriteFile(ms.fileName, allDataJSON, 0666); err != nil {
 		return err
 	}
 	return nil
@@ -59,6 +54,9 @@ func (ms *MemStorage) LoadFromFile() error {
 	file, err := os.ReadFile(ms.fileName)
 	if err != nil {
 		return err
+	}
+	if len(file) == 0 {
+		file = []byte("{}")
 	}
 	memStorage := &MemStorage{}
 	if err := json.Unmarshal(file, memStorage); err != nil {
