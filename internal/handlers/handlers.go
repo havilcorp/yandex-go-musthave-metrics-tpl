@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memstorage"
+	"github.com/sirupsen/logrus"
 )
 
 var store = *memstorage.NewMemStorage(false)
@@ -22,11 +23,13 @@ func UpdateHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&req); err != nil {
+		logrus.Info(err)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	if req.MType == models.TypeMetricsCounter {
 		if err := store.AddCounter(req.ID, *req.Delta); err != nil {
+			logrus.Info(err)
 			rw.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -39,6 +42,7 @@ func UpdateHandler(rw http.ResponseWriter, r *http.Request) {
 			}
 			enc := json.NewEncoder(rw)
 			if err := enc.Encode(resp); err != nil {
+				logrus.Info(err)
 				return
 			}
 		} else {
@@ -47,6 +51,7 @@ func UpdateHandler(rw http.ResponseWriter, r *http.Request) {
 	}
 	if req.MType == models.TypeMetricsGauge {
 		if err := store.AddGauge(req.ID, *req.Value); err != nil {
+			logrus.Info(err)
 			rw.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -59,6 +64,7 @@ func UpdateHandler(rw http.ResponseWriter, r *http.Request) {
 			}
 			enc := json.NewEncoder(rw)
 			if err := enc.Encode(resp); err != nil {
+				logrus.Info(err)
 				return
 			}
 		} else {
@@ -75,11 +81,13 @@ func UpdateCounterHandler(rw http.ResponseWriter, r *http.Request) {
 
 	marketValInt64, err := strconv.ParseInt(marketVal, 0, 64)
 	if err != nil {
+		logrus.Info(err)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if err := store.AddCounter(marketName, marketValInt64); err != nil {
+		logrus.Info(err)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -94,11 +102,13 @@ func UpdateGaugeHandler(rw http.ResponseWriter, r *http.Request) {
 
 	marketValFloat64, err := strconv.ParseFloat(marketVal, 64)
 	if err != nil {
+		logrus.Info(err)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if err := store.AddGauge(marketName, marketValFloat64); err != nil {
+		logrus.Info(err)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -112,6 +122,7 @@ func GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&req); err != nil {
+		logrus.Info(err)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -125,6 +136,7 @@ func GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
 			}
 			enc := json.NewEncoder(rw)
 			if err := enc.Encode(resp); err != nil {
+				logrus.Info(err)
 				return
 			}
 		} else {
@@ -141,6 +153,7 @@ func GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
 			}
 			enc := json.NewEncoder(rw)
 			if err := enc.Encode(resp); err != nil {
+				logrus.Info(err)
 				return
 			}
 		} else {
@@ -153,7 +166,10 @@ func GetCounterMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	marketName := chi.URLParam(r, "name")
 	if val, ok := store.GetCounter(marketName); ok {
 		rw.WriteHeader(http.StatusOK)
-		rw.Write([]byte(fmt.Sprintf("%d", val)))
+		_, err := rw.Write([]byte(fmt.Sprintf("%d", val)))
+		if err != nil {
+			logrus.Info(err)
+		}
 	} else {
 		rw.WriteHeader(http.StatusNotFound)
 	}
@@ -163,7 +179,10 @@ func GetGaugeMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	marketName := chi.URLParam(r, "name")
 	if val, ok := store.GetGauge(marketName); ok {
 		rw.WriteHeader(http.StatusOK)
-		rw.Write([]byte(fmt.Sprintf("%g", val)))
+		_, err := rw.Write([]byte(fmt.Sprintf("%g", val)))
+		if err != nil {
+			logrus.Info(err)
+		}
 	} else {
 		rw.WriteHeader(http.StatusNotFound)
 	}
@@ -193,7 +212,10 @@ func MainPageHandler(rw http.ResponseWriter, r *http.Request) {
 		</body>
 	</html>`,
 		liCounter, liGauge)
-	rw.Write([]byte(html))
+	_, err := rw.Write([]byte(html))
+	if err != nil {
+		logrus.Info(err)
+	}
 }
 
 func BadRequestHandler(rw http.ResponseWriter, r *http.Request) {

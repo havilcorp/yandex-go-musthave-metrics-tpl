@@ -59,16 +59,15 @@ func SendMetric(address string, ms memstorage.Repositories) error {
 		zb := gzip.NewWriter(buf)
 		_, err := zb.Write([]byte(fmt.Sprintf(`{"id":"%s","type":"gauge","value":%f}`, key, val)))
 		if err != nil {
-			fmt.Println(err)
 			return err
 		}
-		zb.Close()
+		if err = zb.Close(); err != nil {
+			return err
+		}
 		r := client.NewRequest()
 		r.Header.Set("Content-Encoding", "gzip")
 		r.SetBody(buf)
-		_, err = r.Post(url)
-		if err != nil {
-			fmt.Println(err)
+		if _, err = r.Post(url); err != nil {
 			return err
 		}
 	}
@@ -77,13 +76,17 @@ func SendMetric(address string, ms memstorage.Repositories) error {
 		url := fmt.Sprintf("http://%s/update", address)
 		buf := bytes.NewBuffer(nil)
 		zb := gzip.NewWriter(buf)
-		zb.Write([]byte(fmt.Sprintf(`{"id":"%s","type":"counter","delta":%d}`, key, val)))
-		zb.Close()
+		_, err := zb.Write([]byte(fmt.Sprintf(`{"id":"%s","type":"counter","delta":%d}`, key, val)))
+		if err != nil {
+			return err
+		}
+		if err = zb.Close(); err != nil {
+			return err
+		}
 		r := client.NewRequest()
 		r.Header.Set("Content-Encoding", "gzip")
 		r.SetBody(buf)
-		_, err := r.Post(url)
-		if err != nil {
+		if _, err = r.Post(url); err != nil {
 			return err
 		}
 	}

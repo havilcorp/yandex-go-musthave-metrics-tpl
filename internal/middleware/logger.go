@@ -7,12 +7,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// type ResponseWriter interface {
-// 	Header() Header
-// 	Write([]byte) (int, error)
-// 	WriteHeader(statusCode int)
-// }
-
 type (
 	responseData struct {
 		status int
@@ -26,12 +20,6 @@ type (
 		responseData *responseData
 	}
 )
-
-// type ResponseWriter interface {
-// 	Header() http.Header
-// 	Write([]byte) (int, error)
-// 	WriteHeader(statusCode int)
-// }
 
 func (r *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)

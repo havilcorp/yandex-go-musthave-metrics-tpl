@@ -15,7 +15,11 @@ func Save(filename string, data interface{}) error {
 	if err != nil {
 		return err
 	}
-	file.Write([]byte(json))
-	file.Write([]byte("\n"))
+	if _, err := file.Write([]byte(json)); err != nil {
+		return err
+	}
+	if _, err := file.Write([]byte("\n")); err != nil {
+		return err
+	}
 	return nil
 }

@@ -49,7 +49,9 @@ func (ms *MemStorage) SaveToFile() error {
 	if err != nil {
 		return err
 	}
-	file.Write([]byte(allDataJSON))
+	if _, err := file.Write([]byte(allDataJSON)); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -63,10 +65,14 @@ func (ms *MemStorage) LoadFromFile() error {
 		return err
 	}
 	for key, value := range memStorage.Counter {
-		ms.AddCounter(key, value)
+		if err := ms.AddCounter(key, value); err != nil {
+			return err
+		}
 	}
 	for key, value := range memStorage.Gauge {
-		ms.AddGauge(key, value)
+		if err := ms.AddGauge(key, value); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -74,7 +80,9 @@ func (ms *MemStorage) LoadFromFile() error {
 func (ms *MemStorage) AddGauge(key string, gauge float64) error {
 	ms.Gauge[key] = gauge
 	if ms.syncWrite {
-		ms.SaveToFile()
+		if err := ms.SaveToFile(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -86,7 +94,9 @@ func (ms *MemStorage) AddCounter(key string, counter int64) error {
 		ms.Counter[key] = counter
 	}
 	if ms.syncWrite {
-		ms.SaveToFile()
+		if err := ms.SaveToFile(); err != nil {
+			return err
+		}
 	}
 	return nil
 }

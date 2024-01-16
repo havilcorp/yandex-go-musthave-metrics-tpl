@@ -31,7 +31,10 @@ func StartServer() error {
 	store := *memstorage.NewMemStorage(storeInterval == 0)
 	store.SetWfiteFileName(fileStoragePath)
 	if isRestore {
-		store.LoadFromFile()
+		if err := store.LoadFromFile(); err != nil {
+			logrus.Info(err)
+			return err
+		}
 	}
 	handlers.SetStore(store)
 
@@ -60,19 +63,14 @@ func StartServer() error {
 	go http.ListenAndServe(serverAddress, r)
 	logrus.Infof("Starting server on %s", serverAddress)
 
-	var ticker *time.Ticker
-	stopTimer := make(chan bool)
+	var timeTicker *time.Ticker
 
 	if storeInterval != 0 {
-		ticker = time.NewTicker(time.Second * time.Duration(storeInterval))
+		timeTicker = time.NewTicker(time.Second * time.Duration(storeInterval))
 		go func() {
-			defer func() { stopTimer <- true }()
-			for {
-				select {
-				case <-ticker.C:
-					store.SaveToFile()
-				case <-stopTimer:
-					return
+			for range timeTicker.C {
+				if err := store.SaveToFile(); err != nil {
+					logrus.Info(err)
 				}
 			}
 		}()
@@ -81,12 +79,13 @@ func StartServer() error {
 	terminateSignals := make(chan os.Signal, 1)
 	signal.Notify(terminateSignals, syscall.SIGINT)
 	<-terminateSignals
-	if ticker != nil {
-		ticker.Stop()
-		stopTimer <- true
+	if timeTicker != nil {
+		timeTicker.Stop()
 	}
-	store.SaveToFile()
+	if err := store.SaveToFile(); err != nil {
+		logrus.Info(err)
+		return err
+	}
 	logrus.Info("Приложение остановлено")
-
 	return nil
 }

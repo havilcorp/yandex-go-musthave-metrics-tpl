@@ -82,7 +82,6 @@ func GzipMiddleware(h http.Handler) http.Handler {
 			cr, err := newCompressReader(r.Body)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
-				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
 			r.Body = cr
