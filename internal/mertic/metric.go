@@ -1,6 +1,8 @@
 package mertic
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"math/rand"
 	"runtime"
@@ -28,6 +30,8 @@ func WriteMetric(ms memstorage.Repositories) {
 	ms.AddGauge("LastGC", float64(memStats.LastGC))
 	ms.AddGauge("Lookups", float64(memStats.Lookups))
 	ms.AddGauge("MCacheInuse", float64(memStats.MCacheInuse))
+	ms.AddGauge("MCacheSys", float64(memStats.MCacheSys))
+	ms.AddGauge("MSpanInuse", float64(memStats.MSpanInuse))
 	ms.AddGauge("MSpanSys", float64(memStats.MSpanSys))
 	ms.AddGauge("Mallocs", float64(memStats.Mallocs))
 	ms.AddGauge("NextGC", float64(memStats.NextGC))
@@ -39,8 +43,8 @@ func WriteMetric(ms memstorage.Repositories) {
 	ms.AddGauge("StackSys", float64(memStats.StackSys))
 	ms.AddGauge("Sys", float64(memStats.Sys))
 	ms.AddGauge("TotalAlloc", float64(memStats.TotalAlloc))
-	ms.AddCounter("PollCount", int64(1))
 	ms.AddGauge("RandomValue", float64(rand.Intn(10)))
+	ms.AddCounter("PollCount", int64(1))
 }
 
 func SendMetric(address string, ms memstorage.Repositories) error {
@@ -50,23 +54,39 @@ func SendMetric(address string, ms memstorage.Repositories) error {
 	counters := ms.GetAllCounters()
 
 	for key, val := range gauges {
-		_, err := client.R().SetPathParams(map[string]string{
-			"name":    key,
-			"value":   fmt.Sprintf("%f", val),
-			"address": address,
-		}).Post("http://{address}/update/gauge/{name}/{value}")
+		url := fmt.Sprintf("http://%s/update", address)
+		buf := bytes.NewBuffer(nil)
+		zb := gzip.NewWriter(buf)
+		_, err := zb.Write([]byte(fmt.Sprintf(`{"id":"%s","type":"gauge","value":%f}`, key, val)))
 		if err != nil {
+			return err
+		}
+		if err = zb.Close(); err != nil {
+			return err
+		}
+		r := client.NewRequest()
+		r.Header.Set("Content-Encoding", "gzip")
+		r.SetBody(buf)
+		if _, err = r.Post(url); err != nil {
 			return err
 		}
 	}
 
 	for key, val := range counters {
-		_, err := client.R().SetPathParams(map[string]string{
-			"name":    key,
-			"value":   fmt.Sprintf("%d", val),
-			"address": address,
-		}).Post("http://{address}/update/counter/{name}/{value}")
+		url := fmt.Sprintf("http://%s/update", address)
+		buf := bytes.NewBuffer(nil)
+		zb := gzip.NewWriter(buf)
+		_, err := zb.Write([]byte(fmt.Sprintf(`{"id":"%s","type":"counter","delta":%d}`, key, val)))
 		if err != nil {
+			return err
+		}
+		if err = zb.Close(); err != nil {
+			return err
+		}
+		r := client.NewRequest()
+		r.Header.Set("Content-Encoding", "gzip")
+		r.SetBody(buf)
+		if _, err = r.Post(url); err != nil {
 			return err
 		}
 	}

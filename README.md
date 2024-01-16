@@ -23,7 +23,10 @@ git fetch template && git checkout template/main .github
 
 Затем добавьте полученные изменения в свой репозиторий.
 
-## Запуск автотестов
+## Запуск автотестов 1
+
+/Users/kotvkompe/Desktop/YP/yandex-go-musthave-metrics-tpl
+./metricstest-darwin-arm64 -test.v -test.run=^TestIteration7$ -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8081
 
 Для успешного запуска автотестов называйте ветки `iter<number>`, где `<number>` — порядковый номер инкремента. Например, в ветке с названием `iter4` запустятся автотесты для инкрементов с первого по четвёртый.
 

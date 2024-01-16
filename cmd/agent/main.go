@@ -5,10 +5,5 @@ import (
 )
 
 func main() {
-
-	err := agent.StartAgent()
-	if err != nil {
-		panic(err)
-	}
-
+	agent.StartAgent()
 }

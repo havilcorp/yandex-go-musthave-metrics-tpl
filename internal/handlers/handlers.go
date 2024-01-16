@@ -1,15 +1,78 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memstorage"
+	"github.com/sirupsen/logrus"
 )
 
-var store = memstorage.MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
+var store = *memstorage.NewMemStorage(false)
+
+func SetStore(storage memstorage.MemStorage) {
+	store = storage
+}
+
+func UpdateHandler(rw http.ResponseWriter, r *http.Request) {
+	var req models.MetricsRequest
+	rw.Header().Set("Content-Type", "application/json")
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&req); err != nil {
+		logrus.Info(err)
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if req.MType == models.TypeMetricsCounter {
+		if err := store.AddCounter(req.ID, *req.Delta); err != nil {
+			logrus.Info(err)
+			rw.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if val, ok := store.GetCounter(req.ID); ok {
+			rw.WriteHeader(http.StatusOK)
+			resp := models.MetricsRequest{
+				ID:    req.ID,
+				MType: req.MType,
+				Delta: &val,
+			}
+			enc := json.NewEncoder(rw)
+			if err := enc.Encode(resp); err != nil {
+				logrus.Info(err)
+				return
+			}
+		} else {
+			rw.WriteHeader(http.StatusNotFound)
+		}
+	}
+	if req.MType == models.TypeMetricsGauge {
+		if err := store.AddGauge(req.ID, *req.Value); err != nil {
+			logrus.Info(err)
+			rw.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if val, ok := store.GetGauge(req.ID); ok {
+			rw.WriteHeader(http.StatusOK)
+			resp := models.MetricsRequest{
+				ID:    req.ID,
+				MType: req.MType,
+				Value: &val,
+			}
+			enc := json.NewEncoder(rw)
+			if err := enc.Encode(resp); err != nil {
+				logrus.Info(err)
+				return
+			}
+		} else {
+			rw.WriteHeader(http.StatusNotFound)
+		}
+	}
+
+}
 
 func UpdateCounterHandler(rw http.ResponseWriter, r *http.Request) {
 
@@ -18,11 +81,13 @@ func UpdateCounterHandler(rw http.ResponseWriter, r *http.Request) {
 
 	marketValInt64, err := strconv.ParseInt(marketVal, 0, 64)
 	if err != nil {
+		logrus.Info(err)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if err := store.AddCounter(marketName, marketValInt64); err != nil {
+		logrus.Info(err)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -37,11 +102,13 @@ func UpdateGaugeHandler(rw http.ResponseWriter, r *http.Request) {
 
 	marketValFloat64, err := strconv.ParseFloat(marketVal, 64)
 	if err != nil {
+		logrus.Info(err)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
 	if err := store.AddGauge(marketName, marketValFloat64); err != nil {
+		logrus.Info(err)
 		rw.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -50,11 +117,59 @@ func UpdateGaugeHandler(rw http.ResponseWriter, r *http.Request) {
 
 }
 
+func GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
+	var req models.MetricsRequest
+	rw.Header().Set("Content-Type", "application/json")
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&req); err != nil {
+		logrus.Info(err)
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if req.MType == models.TypeMetricsCounter {
+		if val, ok := store.GetCounter(req.ID); ok {
+			rw.WriteHeader(http.StatusOK)
+			resp := models.MetricsRequest{
+				ID:    req.ID,
+				MType: req.MType,
+				Delta: &val,
+			}
+			enc := json.NewEncoder(rw)
+			if err := enc.Encode(resp); err != nil {
+				logrus.Info(err)
+				return
+			}
+		} else {
+			rw.WriteHeader(http.StatusNotFound)
+		}
+	}
+	if req.MType == models.TypeMetricsGauge {
+		if val, ok := store.GetGauge(req.ID); ok {
+			rw.WriteHeader(http.StatusOK)
+			resp := models.MetricsRequest{
+				ID:    req.ID,
+				MType: req.MType,
+				Value: &val,
+			}
+			enc := json.NewEncoder(rw)
+			if err := enc.Encode(resp); err != nil {
+				logrus.Info(err)
+				return
+			}
+		} else {
+			rw.WriteHeader(http.StatusNotFound)
+		}
+	}
+}
+
 func GetCounterMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	marketName := chi.URLParam(r, "name")
 	if val, ok := store.GetCounter(marketName); ok {
 		rw.WriteHeader(http.StatusOK)
-		rw.Write([]byte(fmt.Sprintf("%d", val)))
+		_, err := rw.Write([]byte(fmt.Sprintf("%d", val)))
+		if err != nil {
+			logrus.Info(err)
+		}
 	} else {
 		rw.WriteHeader(http.StatusNotFound)
 	}
@@ -64,24 +179,29 @@ func GetGaugeMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	marketName := chi.URLParam(r, "name")
 	if val, ok := store.GetGauge(marketName); ok {
 		rw.WriteHeader(http.StatusOK)
-		rw.Write([]byte(fmt.Sprintf("%g", val)))
+		_, err := rw.Write([]byte(fmt.Sprintf("%g", val)))
+		if err != nil {
+			logrus.Info(err)
+		}
 	} else {
 		rw.WriteHeader(http.StatusNotFound)
 	}
 }
 
 func MainPageHandler(rw http.ResponseWriter, r *http.Request) {
+	rw.Header().Set("Content-Type", "text/html")
 	liCounter := ""
-	for key, item := range store.Counter {
+	for key, item := range store.GetAllCounters() {
 		liCounter += fmt.Sprintf("<li>%s: %d</li>", key, item)
 	}
 	liGauge := ""
-	for key, item := range store.Gauge {
+	for key, item := range store.GetAllGauge() {
 		liGauge += fmt.Sprintf("<li>%s: %f</li>", key, item)
 	}
 	html := fmt.Sprintf(`
 	<html>
 		<body>
+			<br/>
 			Counters
 			<br/>
 			<ul>%s</ul>
@@ -92,7 +212,10 @@ func MainPageHandler(rw http.ResponseWriter, r *http.Request) {
 		</body>
 	</html>`,
 		liCounter, liGauge)
-	rw.Write([]byte(html))
+	_, err := rw.Write([]byte(html))
+	if err != nil {
+		logrus.Info(err)
+	}
 }
 
 func BadRequestHandler(rw http.ResponseWriter, r *http.Request) {
