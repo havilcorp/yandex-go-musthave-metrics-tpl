@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"os/signal"
@@ -28,6 +29,9 @@ func StartServer() error {
 	logrus.Infof("FileStoragePath: %s", fileStoragePath)
 	logrus.Infof("IsRestore: %t", isRestore)
 
+	r := chi.NewRouter()
+	server := &http.Server{Addr: serverAddress, Handler: r}
+
 	store := *memstorage.NewMemStorage(storeInterval == 0)
 	store.SetWfiteFileName(fileStoragePath)
 	if isRestore {
@@ -37,8 +41,6 @@ func StartServer() error {
 		}
 	}
 	handlers.SetStore(store)
-
-	r := chi.NewRouter()
 
 	// r.Use(middleware.Timeout(60 * time.Second))
 
@@ -60,8 +62,12 @@ func StartServer() error {
 		r.Post("/{all}/{name}/{value}", handlers.BadRequestHandler)
 	})
 
-	go http.ListenAndServe(serverAddress, r)
-	logrus.Infof("Starting server on %s", serverAddress)
+	go func() {
+		logrus.Infof("Starting server on %s", serverAddress)
+		if err := server.ListenAndServe(); err != nil {
+			logrus.Info(err)
+		}
+	}()
 
 	var timeTicker *time.Ticker
 
@@ -79,6 +85,7 @@ func StartServer() error {
 	terminateSignals := make(chan os.Signal, 1)
 	signal.Notify(terminateSignals, syscall.SIGINT)
 	<-terminateSignals
+	server.Shutdown(context.Background())
 	if timeTicker != nil {
 		timeTicker.Stop()
 	}
@@ -86,6 +93,6 @@ func StartServer() error {
 		logrus.Info(err)
 		return err
 	}
-	logrus.Info("Приложение остановлено")
+	logrus.Info("Сервер остановлен")
 	return nil
 }
