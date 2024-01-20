@@ -7,6 +7,10 @@ import (
 	"syscall"
 	"time"
 
+	"database/sql"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/go-chi/chi"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers"
@@ -21,14 +25,27 @@ func StartServer() error {
 	var storeInterval int
 	var fileStoragePath string
 	var isRestore bool
+	var dbConnect string
 
-	config.WriteServerConfig(&serverAddress, &storeInterval, &fileStoragePath, &isRestore)
+	config.WriteServerConfig(&serverAddress, &storeInterval, &fileStoragePath, &isRestore, &dbConnect)
 
 	logrus.Infof("StoreInterval: %d", storeInterval)
 	logrus.Infof("FileStoragePath: %s", fileStoragePath)
 	logrus.Infof("IsRestore: %t", isRestore)
+	logrus.Infof("DbConnect: %s", dbConnect)
 
 	r := chi.NewRouter()
+
+	db, err := sql.Open("pgx", dbConnect)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
 
 	store := *memstorage.NewMemStorage(storeInterval == 0)
 	store.SetWfiteFileName(fileStoragePath)
@@ -38,6 +55,7 @@ func StartServer() error {
 		}
 	}
 	handlers.SetStore(store)
+	handlers.SetDB(db)
 
 	// r.Use(middleware.Timeout(60 * time.Second))
 
@@ -45,6 +63,8 @@ func StartServer() error {
 	r.Use(middleware.GzipMiddleware)
 
 	r.Get("/", handlers.MainPageHandler)
+
+	r.Get("/ping", handlers.CheckDBHandler)
 
 	r.Route("/value", func(r chi.Router) {
 		r.Post("/", handlers.GetMetricHandler)

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,9 +14,23 @@ import (
 )
 
 var store = *memstorage.NewMemStorage(false)
+var db *sql.DB
 
 func SetStore(storage memstorage.MemStorage) {
 	store = storage
+}
+
+func SetDB(database *sql.DB) {
+	db = database
+}
+
+func CheckDBHandler(rw http.ResponseWriter, r *http.Request) {
+	err := db.Ping()
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+	} else {
+		rw.WriteHeader(http.StatusOK)
+	}
 }
 
 func UpdateHandler(rw http.ResponseWriter, r *http.Request) {

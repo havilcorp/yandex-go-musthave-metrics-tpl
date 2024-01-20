@@ -35,7 +35,13 @@ func WriteAgentConfig(flagServerAddr *string, reportInterval *int, pollInterval 
 
 }
 
-func WriteServerConfig(serverAddress *string, storeInterval *int, fileStoragePath *string, isRestore *bool) {
+func WriteServerConfig(
+	serverAddress *string,
+	storeInterval *int,
+	fileStoragePath *string,
+	isRestore *bool,
+	dbConnect *string) {
+
 	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
 		*serverAddress = envServerAddress
 	} else {
@@ -63,5 +69,12 @@ func WriteServerConfig(serverAddress *string, storeInterval *int, fileStoragePat
 	} else {
 		flag.BoolVar(isRestore, "r", true, "is restore")
 	}
+
+	if envDbConnect := os.Getenv("DATABASE_DSN"); envDbConnect != "" {
+		*dbConnect = envDbConnect
+	} else {
+		flag.StringVar(dbConnect, "d", "postgres://postgres:password@localhost:5433/postgres?sslmode=disable", "db connect string")
+	}
+
 	flag.Parse()
 }
