@@ -82,6 +82,31 @@ func UpdateHandler(rw http.ResponseWriter, r *http.Request) {
 
 }
 
+func UpdateBulkHandler(rw http.ResponseWriter, r *http.Request) {
+	metrics := make([]models.MetricsRequest, 0)
+	dec := json.NewDecoder(r.Body)
+	if err := dec.Decode(&metrics); err != nil {
+		logrus.Info(err)
+		rw.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	gauge := make([]models.GaugeModel, 0)
+	counter := make([]models.CounterModel, 0)
+	for _, m := range metrics {
+		if m.MType == models.TypeMetricsGauge {
+			gauge = append(gauge, models.GaugeModel{Key: m.ID, Value: *m.Value})
+		} else if m.MType == models.TypeMetricsCounter {
+			counter = append(counter, models.CounterModel{Key: m.ID, Value: *m.Delta})
+		}
+	}
+	if err := store.AddGaugeBulk(gauge); err != nil {
+		logrus.Info(err)
+	}
+	if err := store.AddCounterBulk(counter); err != nil {
+		logrus.Info(err)
+	}
+}
+
 func UpdateCounterHandler(rw http.ResponseWriter, r *http.Request) {
 
 	marketName := chi.URLParam(r, "name")

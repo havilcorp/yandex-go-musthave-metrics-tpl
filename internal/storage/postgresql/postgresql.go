@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/sirupsen/logrus"
 )
@@ -20,17 +21,39 @@ func (store *PsqlStorage) Init(ctx context.Context) error {
 	store.ctx = ctx
 	store.db, err = sql.Open("pgx", store.Conf.DbConnect)
 	if err != nil {
+		logrus.Info(err)
 		return err
 	}
-	_, err = store.db.QueryContext(store.ctx, "CREATE TABLE IF NOT EXISTS gauge (key varchar(100), value DOUBLE PRECISION);")
-	if err != nil {
-		return err
-	}
-	_, err = store.db.QueryContext(store.ctx, "CREATE TABLE IF NOT EXISTS counter (key varchar(100), value int8);")
-	if err != nil {
+	if err := store.Bootstrap(); err != nil {
+		logrus.Info(err)
 		return err
 	}
 	return nil
+}
+
+func (store *PsqlStorage) Bootstrap() error {
+	tx, err := store.db.BeginTx(store.ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	tx.ExecContext(store.ctx, `
+		CREATE TABLE IF NOT EXISTS gauge (
+			id SERIAL PRIMARY KEY,
+			key varchar(100) UNIQUE NOT NULL, 
+			value DOUBLE PRECISION NOT NULL,
+			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+	`)
+	tx.ExecContext(store.ctx, `
+		CREATE TABLE IF NOT EXISTS counter (
+			id SERIAL PRIMARY KEY,
+			key varchar(100) UNIQUE NOT NULL, 
+			value bigint NOT NULL,
+			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+	`)
+	return tx.Commit()
 }
 
 func (store *PsqlStorage) Close() {
@@ -38,72 +61,82 @@ func (store *PsqlStorage) Close() {
 }
 
 func (store *PsqlStorage) AddGauge(key string, gauge float64) error {
-	var err error
-	var count int
-	gaugeCountQuery := store.db.QueryRowContext(store.ctx, "SELECT COUNT(*) FROM gauge WHERE key=$1", key)
-	if err = gaugeCountQuery.Err(); err != nil {
-		logrus.Info(err)
-		return err
-	}
-	err = gaugeCountQuery.Scan(&count)
+	_, err := store.db.ExecContext(store.ctx, `
+		INSERT INTO gauge (key, value)
+		VALUES($1, $2) 
+		ON CONFLICT (key) 
+		DO UPDATE SET value = $2;
+	`, key, gauge)
 	if err != nil {
 		logrus.Info(err)
 		return err
-	}
-	if count == 0 {
-		_, err = store.db.ExecContext(store.ctx, "INSERT INTO gauge (key, value) VALUES ($1, $2)", key, gauge)
-		if err != nil {
-			logrus.Info(err)
-			return err
-		}
-	} else {
-		_, err = store.db.ExecContext(store.ctx, "UPDATE gauge SET value=$1 WHERE key=$2", gauge, key)
-		if err != nil {
-			logrus.Info(err)
-			return err
-		}
 	}
 	return nil
 }
 
 func (store *PsqlStorage) AddCounter(key string, counter int64) error {
-	var err error
-	var count int
-	row := store.db.QueryRowContext(store.ctx, "SELECT COUNT(*) FROM counter WHERE key=$1", key)
-	if err = row.Err(); err != nil {
-		logrus.Info(err)
-		return err
-	}
-	err = row.Scan(&count)
+	_, err := store.db.ExecContext(store.ctx, `
+		INSERT INTO counter (key, value)
+		VALUES($1, $2) 
+		ON CONFLICT (key) 
+		DO UPDATE SET value = counter.value + $2;
+	`, key, counter)
 	if err != nil {
 		logrus.Info(err)
 		return err
 	}
-	if count == 0 {
-		_, err = store.db.ExecContext(store.ctx, "INSERT INTO counter (key, value) VALUES ($1, $2)", key, counter)
-		if err != nil {
-			logrus.Info(err)
-			return err
-		}
-	} else {
-		var counterVal int64
-		row2 := store.db.QueryRowContext(store.ctx, "SELECT value FROM counter WHERE key=$1", key)
-		if err = row2.Err(); err != nil {
-			logrus.Info(err)
-			return err
-		}
-		err = row2.Scan(&counterVal)
-		if err != nil {
-			logrus.Info(err)
-			return err
-		}
-		_, err = store.db.ExecContext(store.ctx, "UPDATE counter SET value=$1 WHERE key=$2", counterVal+counter, key)
+	return nil
+}
+
+func (store *PsqlStorage) AddGaugeBulk(list []models.GaugeModel) error {
+	tx, err := store.db.BeginTx(store.ctx, nil)
+	if err != nil {
+		logrus.Info(err)
+		return err
+	}
+	defer tx.Rollback()
+	for _, model := range list {
+		_, err = tx.ExecContext(store.ctx, `
+			INSERT INTO gauge (key, value)
+			VALUES($1, $2) 
+			ON CONFLICT (key) 
+			DO UPDATE SET value = $2;
+		`, model.Key, model.Value)
 		if err != nil {
 			logrus.Info(err)
 			return err
 		}
 	}
+	if err = tx.Commit(); err != nil {
+		logrus.Info(err)
+		return err
+	}
+	return nil
+}
 
+func (store *PsqlStorage) AddCounterBulk(list []models.CounterModel) error {
+	tx, err := store.db.BeginTx(store.ctx, nil)
+	if err != nil {
+		logrus.Info(err)
+		return err
+	}
+	defer tx.Rollback()
+	for _, model := range list {
+		_, err = tx.ExecContext(store.ctx, `
+			INSERT INTO counter (key, value)
+			VALUES($1, $2) 
+			ON CONFLICT (key) 
+			DO UPDATE SET value = counter.value + $2;
+		`, model.Key, model.Value)
+		if err != nil {
+			logrus.Info(err)
+			return err
+		}
+	}
+	if err = tx.Commit(); err != nil {
+		logrus.Info(err)
+		return err
+	}
 	return nil
 }
 
@@ -158,15 +191,19 @@ func (store *PsqlStorage) GetAllCounters() map[string]int64 {
 		}
 		counter[key] = val
 	}
+	if err := rows.Err(); err != nil {
+		logrus.Info(err)
+		return counter
+	}
 	return counter
 }
 
 func (store *PsqlStorage) GetAllGauge() map[string]float64 {
-	counter := make(map[string]float64, 0)
+	gauge := make(map[string]float64, 0)
 	rows, err := store.db.QueryContext(store.ctx, "SELECT key, value FROM gauge")
 	if err != nil {
 		logrus.Info(err)
-		return counter
+		return gauge
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -174,11 +211,15 @@ func (store *PsqlStorage) GetAllGauge() map[string]float64 {
 		var val float64
 		if err := rows.Scan(&key, &val); err != nil {
 			logrus.Info(err)
-			return counter
+			return gauge
 		}
-		counter[key] = val
+		gauge[key] = val
 	}
-	return counter
+	if err := rows.Err(); err != nil {
+		logrus.Info(err)
+		return gauge
+	}
+	return gauge
 }
 
 func (store *PsqlStorage) SaveToFile() error {

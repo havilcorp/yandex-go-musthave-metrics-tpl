@@ -1,6 +1,10 @@
 package memory
 
-import "context"
+import (
+	"context"
+
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
+)
 
 type MemStorage struct {
 	Gauge   map[string]float64
@@ -25,6 +29,24 @@ func (store *MemStorage) AddCounter(key string, counter int64) error {
 		store.Counter[key] = val + counter
 	} else {
 		store.Counter[key] = counter
+	}
+	return nil
+}
+
+func (store *MemStorage) AddGaugeBulk(list []models.GaugeModel) error {
+	for _, model := range list {
+		if err := store.AddGauge(model.Key, model.Value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (store *MemStorage) AddCounterBulk(list []models.CounterModel) error {
+	for _, model := range list {
+		if err := store.AddCounter(model.Key, model.Value); err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -3,12 +3,15 @@ package mertic
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"runtime"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memory"
+	"github.com/sirupsen/logrus"
 )
 
 var memStats runtime.MemStats
@@ -49,46 +52,40 @@ func WriteMetric(ms memory.MemStorage) {
 
 func SendMetric(address string, ms memory.MemStorage) error {
 	client := resty.New()
-
 	gauges := ms.GetAllGauge()
 	counters := ms.GetAllCounters()
-
+	metrics := make([]models.MetricsRequest, 0)
+	url := fmt.Sprintf("http://%s/updates", address)
+	buf := bytes.NewBuffer(nil)
+	zb := gzip.NewWriter(buf)
 	for key, val := range gauges {
-		url := fmt.Sprintf("http://%s/update", address)
-		buf := bytes.NewBuffer(nil)
-		zb := gzip.NewWriter(buf)
-		_, err := zb.Write([]byte(fmt.Sprintf(`{"id":"%s","type":"gauge","value":%f}`, key, val)))
-		if err != nil {
-			return err
-		}
-		if err = zb.Close(); err != nil {
-			return err
-		}
-		r := client.NewRequest()
-		r.Header.Set("Content-Encoding", "gzip")
-		r.SetBody(buf)
-		if _, err = r.Post(url); err != nil {
-			return err
-		}
+		value := val
+		metrics = append(metrics, models.MetricsRequest{ID: key, MType: "gauge", Value: &value})
 	}
-
 	for key, val := range counters {
-		url := fmt.Sprintf("http://%s/update", address)
-		buf := bytes.NewBuffer(nil)
-		zb := gzip.NewWriter(buf)
-		_, err := zb.Write([]byte(fmt.Sprintf(`{"id":"%s","type":"counter","delta":%d}`, key, val)))
-		if err != nil {
-			return err
-		}
-		if err = zb.Close(); err != nil {
-			return err
-		}
-		r := client.NewRequest()
-		r.Header.Set("Content-Encoding", "gzip")
-		r.SetBody(buf)
-		if _, err = r.Post(url); err != nil {
-			return err
-		}
+		value := val
+		metrics = append(metrics, models.MetricsRequest{ID: key, MType: "counter", Delta: &value})
+	}
+	jsonMetric, err := json.Marshal(metrics)
+	if err != nil {
+		logrus.Info(err)
+		return err
+	}
+	_, err = zb.Write(jsonMetric)
+	if err != nil {
+		logrus.Info(err)
+		return err
+	}
+	if err = zb.Close(); err != nil {
+		logrus.Info(err)
+		return err
+	}
+	r := client.NewRequest()
+	r.Header.Set("Content-Encoding", "gzip")
+	r.SetBody(buf)
+	if _, err = r.Post(url); err != nil {
+		logrus.Info(err)
+		return err
 	}
 	return nil
 }

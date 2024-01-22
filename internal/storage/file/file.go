@@ -52,6 +52,24 @@ func (store *FileStorage) AddCounter(key string, counter int64) error {
 	return nil
 }
 
+func (store *FileStorage) AddGaugeBulk(list []models.GaugeModel) error {
+	for _, model := range list {
+		if err := store.AddGauge(model.Key, model.Value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (store *FileStorage) AddCounterBulk(list []models.CounterModel) error {
+	for _, model := range list {
+		if err := store.AddCounter(model.Key, model.Value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (store *FileStorage) GetCounter(key string) (int64, bool) {
 	val, ok := store.Counter[key]
 	return val, ok

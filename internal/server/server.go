@@ -78,6 +78,10 @@ func StartServer() error {
 		r.Get("/gauge/{name}", handlers.GetGaugeMetricHandler)
 	})
 
+	r.Route("/updates", func(r chi.Router) {
+		r.Post("/", handlers.UpdateBulkHandler)
+	})
+
 	r.Route("/update", func(r chi.Router) {
 		r.Post("/", handlers.UpdateHandler)
 		r.Post("/counter/{name}/{value}", handlers.UpdateCounterHandler)
