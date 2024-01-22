@@ -1,61 +1,67 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"database/sql"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
-
 	"github.com/go-chi/chi"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/middleware"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memstorage"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/file"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memory"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/postgresql"
 	"github.com/sirupsen/logrus"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func StartServer() error {
 
-	var serverAddress string
-	var storeInterval int
-	var fileStoragePath string
-	var isRestore bool
-	var dbConnect string
+	conf := config.Config{}
+	conf.WriteServerConfig()
 
-	config.WriteServerConfig(&serverAddress, &storeInterval, &fileStoragePath, &isRestore, &dbConnect)
+	logrus.Infof("StoreInterval: %d", conf.StoreInterval)
+	logrus.Infof("FileStoragePath: %s", conf.FileStoragePath)
+	logrus.Infof("IsRestore: %t", conf.IsRestore)
+	logrus.Infof("DbConnect: %s", conf.DbConnect)
 
-	logrus.Infof("StoreInterval: %d", storeInterval)
-	logrus.Infof("FileStoragePath: %s", fileStoragePath)
-	logrus.Infof("IsRestore: %t", isRestore)
-	logrus.Infof("DbConnect: %s", dbConnect)
+	var storePtr storage.IStorage
 
-	r := chi.NewRouter()
-
-	db, err := sql.Open("pgx", dbConnect)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	store := *memstorage.NewMemStorage(storeInterval == 0)
-	store.SetWfiteFileName(fileStoragePath)
-	if isRestore {
-		if err := store.LoadFromFile(); err != nil {
-			logrus.Info(err)
+	if conf.DbConnect != "" {
+		logrus.Info("PsqlStorage")
+		storePtr = &postgresql.PsqlStorage{
+			Conf: &conf,
+		}
+	} else if conf.FileStoragePath != "" {
+		logrus.Info("FileStorage")
+		storePtr = &file.FileStorage{
+			Conf:    &conf,
+			Gauge:   map[string]float64{},
+			Counter: map[string]int64{},
+		}
+	} else {
+		logrus.Info("MemStorage")
+		storePtr = &memory.MemStorage{
+			Gauge:   map[string]float64{},
+			Counter: map[string]int64{},
 		}
 	}
-	handlers.SetStore(store)
-	handlers.SetDB(db)
+
+	if err := storePtr.Init(context.Background()); err != nil {
+		logrus.Info(err)
+		return nil
+	}
+	defer storePtr.Close()
+
+	handlers.SetStore(storePtr)
+
+	r := chi.NewRouter()
 
 	// r.Use(middleware.Timeout(60 * time.Second))
 
@@ -79,20 +85,21 @@ func StartServer() error {
 		r.Post("/{all}/{name}/{value}", handlers.BadRequestHandler)
 	})
 
+	var timeTicker *time.Ticker
+	server := &http.Server{Addr: conf.ServerAddress, Handler: r}
+
 	go func() {
-		logrus.Infof("Starting server on %s", serverAddress)
-		if err := http.ListenAndServe(serverAddress, r); err != nil {
+		logrus.Infof("Starting server on %s", conf.ServerAddress)
+		if err := server.ListenAndServe(); err != nil {
 			logrus.Info(err)
 		}
 	}()
 
-	var timeTicker *time.Ticker
-
-	if storeInterval != 0 {
-		timeTicker = time.NewTicker(time.Second * time.Duration(storeInterval))
+	if conf.StoreInterval != 0 {
+		timeTicker = time.NewTicker(time.Second * time.Duration(conf.StoreInterval))
 		go func() {
 			for range timeTicker.C {
-				if err := store.SaveToFile(); err != nil {
+				if err := storePtr.SaveToFile(); err != nil {
 					logrus.Info(err)
 				}
 			}
@@ -102,13 +109,16 @@ func StartServer() error {
 	terminateSignals := make(chan os.Signal, 1)
 	signal.Notify(terminateSignals, syscall.SIGINT)
 	<-terminateSignals
+	if err := server.Shutdown(context.Background()); err != nil {
+		logrus.Info(err)
+	}
 	if timeTicker != nil {
 		timeTicker.Stop()
 	}
-	if err := store.SaveToFile(); err != nil {
+	if err := storePtr.SaveToFile(); err != nil {
 		logrus.Info(err)
 		return err
 	}
-	logrus.Info("Сервер остановлен")
+	logrus.Info("Приложение остановлено")
 	return nil
 }

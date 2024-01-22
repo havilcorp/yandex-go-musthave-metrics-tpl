@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memory"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,6 +16,8 @@ type Want struct {
 	code   int
 	req    *http.Request
 }
+
+var storeTest = memory.MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
 
 func AddChiURLParams(r *http.Request, params map[string]string) *http.Request {
 	ctx := chi.NewRouteContext()
@@ -52,6 +55,7 @@ func TestUpdateCounterHandler(t *testing.T) {
 			},
 		},
 	}
+	SetStore(&storeTest)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
@@ -91,6 +95,7 @@ func TestUpdateGaugeHandler(t *testing.T) {
 			},
 		},
 	}
+	SetStore(&storeTest)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
@@ -128,6 +133,7 @@ func TestGetCounterMetricHandler(t *testing.T) {
 			},
 		},
 	}
+	SetStore(&storeTest)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
@@ -165,6 +171,7 @@ func TestGetGaugeMetricHandler(t *testing.T) {
 			},
 		},
 	}
+	SetStore(&storeTest)
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			w := httptest.NewRecorder()

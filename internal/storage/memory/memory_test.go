@@ -1,4 +1,4 @@
-package memstorage
+package memory
 
 import (
 	"testing"
@@ -48,7 +48,7 @@ func TestAddGauge(t *testing.T) {
 			},
 		},
 	}
-	store := NewMemStorage(false)
+	store := MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := store.AddGauge(test.want.key, test.want.val)
@@ -90,7 +90,7 @@ func TestAddCounter(t *testing.T) {
 			},
 		},
 	}
-	store := NewMemStorage(false)
+	store := MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := store.AddCounter(test.want.key, test.want.val)

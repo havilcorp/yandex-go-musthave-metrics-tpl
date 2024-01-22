@@ -8,12 +8,12 @@ import (
 	"runtime"
 
 	"github.com/go-resty/resty/v2"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memstorage"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memory"
 )
 
 var memStats runtime.MemStats
 
-func WriteMetric(ms memstorage.Repositories) {
+func WriteMetric(ms memory.MemStorage) {
 	runtime.ReadMemStats(&memStats)
 
 	ms.AddGauge("Alloc", float64(memStats.Alloc))
@@ -47,7 +47,7 @@ func WriteMetric(ms memstorage.Repositories) {
 	ms.AddCounter("PollCount", int64(1))
 }
 
-func SendMetric(address string, ms memstorage.Repositories) error {
+func SendMetric(address string, ms memory.MemStorage) error {
 	client := resty.New()
 
 	gauges := ms.GetAllGauge()

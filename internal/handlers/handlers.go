@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,24 +8,18 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memstorage"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage"
 	"github.com/sirupsen/logrus"
 )
 
-var store = *memstorage.NewMemStorage(false)
-var db *sql.DB
+var store storage.IStorage
 
-func SetStore(storage memstorage.MemStorage) {
-	store = storage
-}
-
-func SetDB(database *sql.DB) {
-	db = database
+func SetStore(s storage.IStorage) {
+	store = s
 }
 
 func CheckDBHandler(rw http.ResponseWriter, r *http.Request) {
-	err := db.Ping()
-	if err != nil {
+	if err := store.Ping(); err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 	} else {
 		rw.WriteHeader(http.StatusOK)
