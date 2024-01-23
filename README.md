@@ -29,31 +29,33 @@ git fetch template && git checkout template/main .github
 
 2. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -test.run=^TestIteration2A$
 
-3. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -test.run=^TestIteration2A$
+./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -test.run=^TestIteration2A$
 
-4. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -test.run=^TestIteration3A$
+3. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -test.run=^TestIteration3A$
 
-5. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -test.run=^TestIteration3B$
+./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -test.run=^TestIteration3B$
 
-6. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -test.run=^TestIteration4$
+4. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -test.run=^TestIteration4$
 
-7. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -test.run=^TestIteration5$
+5. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -test.run=^TestIteration5$
 
-8. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -test.run=^TestIteration6$
+6. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -test.run=^TestIteration6$
 
-9. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -test.run=^TestIteration7$
+7. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -test.run=^TestIteration7$
 
-10. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -test.run=^TestIteration8$
+8. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -test.run=^TestIteration8$
 
-11. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -file-storage-path=/tmp/metrics-db.json -test.run=^TestIteration9$
+9. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -file-storage-path=/tmp/metrics-db.json -test.run=^TestIteration9$
 
-12. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -file-storage-path=/tmp/metrics-db.json -database-dsn='postgres://postgres:password@localhost:5433/postgres?sslmode=disable' -test.run=^TestIteration10A$
+10. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -file-storage-path=/tmp/metrics-db.json -database-dsn='postgres://postgres:password@localhost:5433/postgres?sslmode=disable' -test.run=^TestIteration10A$
 
 ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -file-storage-path=/tmp/metrics-db.json -database-dsn='postgres://postgres:password@localhost:5433/postgres?sslmode=disable' -test.run=^TestIteration10B$
 
 11. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -file-storage-path=/tmp/metrics-db.json -database-dsn='postgres://postgres:password@localhost:5433/postgres?sslmode=disable' -test.run=^TestIteration11$
 
 12. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -file-storage-path=/tmp/metrics-db.json -database-dsn='postgres://postgres:password@localhost:5433/postgres?sslmode=disable' -test.run=^TestIteration12$
+
+13. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -file-storage-path=/tmp/metrics-db.json -database-dsn='postgres://postgres:password@localhost:5433/postgres?sslmode=disable' -test.run=^TestIteration13$
 
 ## Запуск автотестов 1
 

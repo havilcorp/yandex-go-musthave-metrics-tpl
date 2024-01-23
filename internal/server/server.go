@@ -54,8 +54,7 @@ func StartServer() error {
 	}
 
 	if err := storePtr.Init(context.Background()); err != nil {
-		logrus.Info(err)
-		return nil
+		panic(err)
 	}
 	defer storePtr.Close()
 

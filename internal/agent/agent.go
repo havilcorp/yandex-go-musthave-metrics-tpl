@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"errors"
 	"os"
 	"os/signal"
 	"syscall"
@@ -23,10 +24,24 @@ func StartAgent() {
 		i := 0
 		for range timeTicker.C {
 			if i%conf.PollInterval == 0 {
-				mertic.WriteMetric(store)
+				if err := mertic.WriteMetric(store); err != nil {
+					logrus.Info(err)
+					panic(err)
+				}
 			}
 			if i%conf.ReportInterval == 0 {
-				mertic.SendMetric(conf.ServerAddress, store)
+				var err error
+				for _, sec := range []int{1, 3, 5} {
+					err = mertic.SendMetric(conf.ServerAddress, store)
+					if errors.Is(err, syscall.ECONNREFUSED) {
+						time.Sleep(time.Duration(sec) * time.Second)
+					} else {
+						break
+					}
+				}
+				if err != nil {
+					logrus.Info(err)
+				}
 			}
 			i++
 		}

@@ -11,43 +11,51 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memory"
-	"github.com/sirupsen/logrus"
 )
 
 var memStats runtime.MemStats
 
-func WriteMetric(ms memory.MemStorage) {
+func WriteMetric(ms memory.MemStorage) error {
 	runtime.ReadMemStats(&memStats)
-
-	ms.AddGauge("Alloc", float64(memStats.Alloc))
-	ms.AddGauge("BuckHashSys", float64(memStats.BuckHashSys))
-	ms.AddGauge("Frees", float64(memStats.Frees))
-	ms.AddGauge("GCCPUFraction", float64(memStats.GCCPUFraction))
-	ms.AddGauge("GCSys", float64(memStats.GCSys))
-	ms.AddGauge("HeapAlloc", float64(memStats.HeapAlloc))
-	ms.AddGauge("HeapIdle", float64(memStats.HeapIdle))
-	ms.AddGauge("HeapInuse", float64(memStats.HeapInuse))
-	ms.AddGauge("HeapObjects", float64(memStats.HeapObjects))
-	ms.AddGauge("HeapReleased", float64(memStats.HeapReleased))
-	ms.AddGauge("HeapSys", float64(memStats.HeapSys))
-	ms.AddGauge("LastGC", float64(memStats.LastGC))
-	ms.AddGauge("Lookups", float64(memStats.Lookups))
-	ms.AddGauge("MCacheInuse", float64(memStats.MCacheInuse))
-	ms.AddGauge("MCacheSys", float64(memStats.MCacheSys))
-	ms.AddGauge("MSpanInuse", float64(memStats.MSpanInuse))
-	ms.AddGauge("MSpanSys", float64(memStats.MSpanSys))
-	ms.AddGauge("Mallocs", float64(memStats.Mallocs))
-	ms.AddGauge("NextGC", float64(memStats.NextGC))
-	ms.AddGauge("NumForcedGC", float64(memStats.NumForcedGC))
-	ms.AddGauge("NumGC", float64(memStats.NumGC))
-	ms.AddGauge("OtherSys", float64(memStats.OtherSys))
-	ms.AddGauge("PauseTotalNs", float64(memStats.PauseTotalNs))
-	ms.AddGauge("StackInuse", float64(memStats.StackInuse))
-	ms.AddGauge("StackSys", float64(memStats.StackSys))
-	ms.AddGauge("Sys", float64(memStats.Sys))
-	ms.AddGauge("TotalAlloc", float64(memStats.TotalAlloc))
-	ms.AddGauge("RandomValue", float64(rand.Intn(10)))
-	ms.AddCounter("PollCount", int64(1))
+	gauges := map[string]float64{
+		"Alloc":         float64(memStats.Alloc),
+		"BuckHashSys":   float64(memStats.BuckHashSys),
+		"Frees":         float64(memStats.Frees),
+		"GCCPUFraction": float64(memStats.GCCPUFraction),
+		"GCSys":         float64(memStats.GCSys),
+		"HeapAlloc":     float64(memStats.HeapAlloc),
+		"HeapIdle":      float64(memStats.HeapIdle),
+		"HeapInuse":     float64(memStats.HeapInuse),
+		"HeapObjects":   float64(memStats.HeapObjects),
+		"HeapReleased":  float64(memStats.HeapReleased),
+		"HeapSys":       float64(memStats.HeapSys),
+		"LastGC":        float64(memStats.LastGC),
+		"Lookups":       float64(memStats.Lookups),
+		"MCacheInuse":   float64(memStats.MCacheInuse),
+		"MCacheSys":     float64(memStats.MCacheSys),
+		"MSpanInuse":    float64(memStats.MSpanInuse),
+		"MSpanSys":      float64(memStats.MSpanSys),
+		"Mallocs":       float64(memStats.Mallocs),
+		"NextGC":        float64(memStats.NextGC),
+		"NumForcedGC":   float64(memStats.NumForcedGC),
+		"NumGC":         float64(memStats.NumGC),
+		"OtherSys":      float64(memStats.OtherSys),
+		"PauseTotalNs":  float64(memStats.PauseTotalNs),
+		"StackInuse":    float64(memStats.StackInuse),
+		"StackSys":      float64(memStats.StackSys),
+		"Sys":           float64(memStats.Sys),
+		"TotalAlloc":    float64(memStats.TotalAlloc),
+		"RandomValue":   float64(rand.Intn(10)),
+	}
+	for key, val := range gauges {
+		if err := ms.AddGauge(key, val); err != nil {
+			return fmt.Errorf("writeMetric => %w", err)
+		}
+	}
+	if err := ms.AddCounter("PollCount", int64(1)); err != nil {
+		return fmt.Errorf("writeMetric => %w", err)
+	}
+	return nil
 }
 
 func SendMetric(address string, ms memory.MemStorage) error {
@@ -68,24 +76,20 @@ func SendMetric(address string, ms memory.MemStorage) error {
 	}
 	jsonMetric, err := json.Marshal(metrics)
 	if err != nil {
-		logrus.Info(err)
-		return err
+		return fmt.Errorf("sendMetrics => %w", err)
 	}
 	_, err = zb.Write(jsonMetric)
 	if err != nil {
-		logrus.Info(err)
-		return err
+		return fmt.Errorf("sendMetrics => %w", err)
 	}
 	if err = zb.Close(); err != nil {
-		logrus.Info(err)
-		return err
+		return fmt.Errorf("sendMetrics => %w", err)
 	}
 	r := client.NewRequest()
 	r.Header.Set("Content-Encoding", "gzip")
 	r.SetBody(buf)
-	if _, err = r.Post(url); err != nil {
-		logrus.Info(err)
-		return err
+	if _, err := r.Post(url); err != nil {
+		return fmt.Errorf("sendMetrics => %w", err)
 	}
 	return nil
 }

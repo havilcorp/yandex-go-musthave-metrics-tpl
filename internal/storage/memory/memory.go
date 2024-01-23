@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
 )
@@ -36,7 +37,7 @@ func (store *MemStorage) AddCounter(key string, counter int64) error {
 func (store *MemStorage) AddGaugeBulk(list []models.GaugeModel) error {
 	for _, model := range list {
 		if err := store.AddGauge(model.Key, model.Value); err != nil {
-			return err
+			return fmt.Errorf("addGaugeBulk => %w", err)
 		}
 	}
 	return nil
@@ -45,7 +46,7 @@ func (store *MemStorage) AddGaugeBulk(list []models.GaugeModel) error {
 func (store *MemStorage) AddCounterBulk(list []models.CounterModel) error {
 	for _, model := range list {
 		if err := store.AddCounter(model.Key, model.Value); err != nil {
-			return err
+			return fmt.Errorf("addCounterBulk => %w", err)
 		}
 	}
 	return nil

@@ -243,8 +243,8 @@ func MainPageHandler(rw http.ResponseWriter, r *http.Request) {
 			<br/>
 			<ul>%s</ul>
 		</body>
-	</html>`,
-		liCounter, liGauge)
+	</html>
+	`, liCounter, liGauge)
 	_, err := rw.Write([]byte(html))
 	if err != nil {
 		logrus.Info(err)
