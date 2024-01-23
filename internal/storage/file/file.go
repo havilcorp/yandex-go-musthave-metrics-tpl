@@ -24,6 +24,9 @@ func (store *FileStorage) Init(ctx context.Context) error {
 		var err error
 		for _, sec := range []int{1, 3, 5} {
 			err = store.LoadFromFile()
+			if errors.Is(err, fs.ErrNotExist) {
+				return nil
+			}
 			if errors.Is(err, fs.ErrClosed) {
 				time.Sleep(time.Duration(sec) * time.Second)
 			} else {

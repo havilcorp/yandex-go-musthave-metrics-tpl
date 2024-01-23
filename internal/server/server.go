@@ -29,11 +29,11 @@ func StartServer() error {
 	logrus.Infof("StoreInterval: %d", conf.StoreInterval)
 	logrus.Infof("FileStoragePath: %s", conf.FileStoragePath)
 	logrus.Infof("IsRestore: %t", conf.IsRestore)
-	logrus.Infof("DbConnect: %s", conf.DbConnect)
+	logrus.Infof("DBConnect: %s", conf.DBConnect)
 
 	var storePtr storage.IStorage
 
-	if conf.DbConnect != "" {
+	if conf.DBConnect != "" {
 		logrus.Info("PsqlStorage")
 		storePtr = &postgresql.PsqlStorage{
 			Conf: &conf,

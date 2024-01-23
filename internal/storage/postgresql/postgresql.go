@@ -23,7 +23,7 @@ type PsqlStorage struct {
 func (store *PsqlStorage) Init(ctx context.Context) error {
 	var err error
 	store.ctx = ctx
-	store.db, err = sql.Open("pgx", store.Conf.DbConnect)
+	store.db, err = sql.Open("pgx", store.Conf.DBConnect)
 	if err != nil {
 		return fmt.Errorf("init => %w", err)
 	}

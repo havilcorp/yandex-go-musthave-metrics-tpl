@@ -13,7 +13,7 @@ type Config struct {
 	StoreInterval   int
 	FileStoragePath string
 	IsRestore       bool
-	DbConnect       string
+	DBConnect       string
 }
 
 func (c *Config) WriteAgentConfig() error {
@@ -51,7 +51,7 @@ func (c *Config) WriteServerConfig() error {
 	flag.IntVar(&c.StoreInterval, "i", 300, "store save interval time in sec")
 	flag.StringVar(&c.FileStoragePath, "f", "/tmp/metrics-db.json", "file store path save")
 	flag.BoolVar(&c.IsRestore, "r", true, "is restore")
-	flag.StringVar(&c.DbConnect, "d", "", "db connect string")
+	flag.StringVar(&c.DBConnect, "d", "", "db connect string")
 	flag.Parse()
 
 	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
@@ -74,8 +74,8 @@ func (c *Config) WriteServerConfig() error {
 		c.IsRestore = envIsRestore == "true"
 	}
 
-	if envDbConnect := os.Getenv("DATABASE_DSN"); envDbConnect != "" {
-		c.DbConnect = envDbConnect
+	if envDBConnect := os.Getenv("DATABASE_DSN"); envDBConnect != "" {
+		c.DBConnect = envDBConnect
 	}
 
 	return nil
