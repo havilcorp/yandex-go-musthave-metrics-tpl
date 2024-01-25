@@ -12,7 +12,7 @@ type MemStorage struct {
 	Counter map[string]int64
 }
 
-func (store *MemStorage) Init(ctx context.Context) error {
+func (store *MemStorage) Init() error {
 	return nil
 }
 
@@ -20,12 +20,12 @@ func (store *MemStorage) Close() {
 
 }
 
-func (store *MemStorage) AddGauge(key string, gauge float64) error {
+func (store *MemStorage) AddGauge(ctx context.Context, key string, gauge float64) error {
 	store.Gauge[key] = gauge
 	return nil
 }
 
-func (store *MemStorage) AddCounter(key string, counter int64) error {
+func (store *MemStorage) AddCounter(ctx context.Context, key string, counter int64) error {
 	if val, ok := store.Counter[key]; ok {
 		store.Counter[key] = val + counter
 	} else {
@@ -34,43 +34,43 @@ func (store *MemStorage) AddCounter(key string, counter int64) error {
 	return nil
 }
 
-func (store *MemStorage) AddGaugeBulk(list []models.GaugeModel) error {
+func (store *MemStorage) AddGaugeBulk(ctx context.Context, list []models.GaugeModel) error {
 	for _, model := range list {
-		if err := store.AddGauge(model.Key, model.Value); err != nil {
+		if err := store.AddGauge(ctx, model.Key, model.Value); err != nil {
 			return fmt.Errorf("addGaugeBulk => %w", err)
 		}
 	}
 	return nil
 }
 
-func (store *MemStorage) AddCounterBulk(list []models.CounterModel) error {
+func (store *MemStorage) AddCounterBulk(ctx context.Context, list []models.CounterModel) error {
 	for _, model := range list {
-		if err := store.AddCounter(model.Key, model.Value); err != nil {
+		if err := store.AddCounter(ctx, model.Key, model.Value); err != nil {
 			return fmt.Errorf("addCounterBulk => %w", err)
 		}
 	}
 	return nil
 }
 
-func (store *MemStorage) GetCounter(key string) (int64, bool) {
+func (store *MemStorage) GetCounter(ctx context.Context, key string) (int64, bool) {
 	val, ok := store.Counter[key]
 	return val, ok
 }
 
-func (store *MemStorage) GetGauge(key string) (float64, bool) {
+func (store *MemStorage) GetGauge(ctx context.Context, key string) (float64, bool) {
 	val, ok := store.Gauge[key]
 	return val, ok
 }
 
-func (store *MemStorage) GetAllCounters() map[string]int64 {
+func (store *MemStorage) GetAllCounters(ctx context.Context) map[string]int64 {
 	return store.Counter
 }
 
-func (store *MemStorage) GetAllGauge() map[string]float64 {
+func (store *MemStorage) GetAllGauge(ctx context.Context) map[string]float64 {
 	return store.Gauge
 }
 
-func (store *MemStorage) SaveToFile() error {
+func (store *MemStorage) SaveToFile(ctx context.Context) error {
 	return nil
 }
 

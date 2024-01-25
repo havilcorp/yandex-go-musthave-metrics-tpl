@@ -53,7 +53,7 @@ func StartServer() error {
 		}
 	}
 
-	if err := storePtr.Init(context.Background()); err != nil {
+	if err := storePtr.Init(); err != nil {
 		panic(err)
 	}
 	defer storePtr.Close()
@@ -102,7 +102,7 @@ func StartServer() error {
 		timeTicker = time.NewTicker(time.Second * time.Duration(conf.StoreInterval))
 		go func() {
 			for range timeTicker.C {
-				if err := storePtr.SaveToFile(); err != nil {
+				if err := storePtr.SaveToFile(context.Background()); err != nil {
 					logrus.Info(err)
 				}
 			}
@@ -118,7 +118,7 @@ func StartServer() error {
 	if timeTicker != nil {
 		timeTicker.Stop()
 	}
-	if err := storePtr.SaveToFile(); err != nil {
+	if err := storePtr.SaveToFile(context.Background()); err != nil {
 		logrus.Info(err)
 		return err
 	}

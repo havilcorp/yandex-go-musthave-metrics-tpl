@@ -3,6 +3,7 @@ package mertic
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -47,21 +48,23 @@ func WriteMetric(ms memory.MemStorage) error {
 		"TotalAlloc":    float64(memStats.TotalAlloc),
 		"RandomValue":   float64(rand.Intn(10)),
 	}
+	ctx := context.Background()
 	for key, val := range gauges {
-		if err := ms.AddGauge(key, val); err != nil {
+		if err := ms.AddGauge(ctx, key, val); err != nil {
 			return fmt.Errorf("writeMetric => %w", err)
 		}
 	}
-	if err := ms.AddCounter("PollCount", int64(1)); err != nil {
+	if err := ms.AddCounter(ctx, "PollCount", int64(1)); err != nil {
 		return fmt.Errorf("writeMetric => %w", err)
 	}
 	return nil
 }
 
 func SendMetric(address string, ms memory.MemStorage) error {
+	ctx := context.Background()
 	client := resty.New()
-	gauges := ms.GetAllGauge()
-	counters := ms.GetAllCounters()
+	gauges := ms.GetAllGauge(ctx)
+	counters := ms.GetAllCounters(ctx)
 	metrics := make([]models.MetricsRequest, 0)
 	url := fmt.Sprintf("http://%s/updates", address)
 	buf := bytes.NewBuffer(nil)

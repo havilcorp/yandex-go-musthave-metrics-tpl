@@ -17,12 +17,11 @@ import (
 type PsqlStorage struct {
 	Conf *config.Config
 	db   *sql.DB
-	ctx  context.Context
 }
 
-func (store *PsqlStorage) Init(ctx context.Context) error {
+func (store *PsqlStorage) Init() error {
+	ctx := context.Background()
 	var err error
-	store.ctx = ctx
 	store.db, err = sql.Open("pgx", store.Conf.DBConnect)
 	if err != nil {
 		return fmt.Errorf("init => %w", err)
@@ -41,19 +40,19 @@ func (store *PsqlStorage) Init(ctx context.Context) error {
 	}
 	// if err, ok := err.(*pgconn.PgError); ok {
 	// 	if err.Code == pgerrcode.ConnectionFailure {
-	if err := store.Bootstrap(); err != nil {
+	if err := store.Bootstrap(ctx); err != nil {
 		return fmt.Errorf("init => %w", err)
 	}
 	return nil
 }
 
-func (store *PsqlStorage) Bootstrap() error {
-	tx, err := store.db.BeginTx(store.ctx, nil)
+func (store *PsqlStorage) Bootstrap(ctx context.Context) error {
+	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("bootstrap => %w", err)
 	}
 	defer tx.Rollback()
-	tx.ExecContext(store.ctx, `
+	tx.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS gauge (
 			id SERIAL PRIMARY KEY,
 			key varchar(100) UNIQUE NOT NULL, 
@@ -61,7 +60,7 @@ func (store *PsqlStorage) Bootstrap() error {
 			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);
 	`)
-	tx.ExecContext(store.ctx, `
+	tx.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS counter (
 			id SERIAL PRIMARY KEY,
 			key varchar(100) UNIQUE NOT NULL, 
@@ -76,8 +75,8 @@ func (store *PsqlStorage) Close() {
 	store.db.Close()
 }
 
-func (store *PsqlStorage) AddGauge(key string, gauge float64) error {
-	_, err := store.db.ExecContext(store.ctx, `
+func (store *PsqlStorage) AddGauge(ctx context.Context, key string, gauge float64) error {
+	_, err := store.db.ExecContext(ctx, `
 		INSERT INTO gauge (key, value)
 		VALUES($1, $2) 
 		ON CONFLICT (key) 
@@ -89,8 +88,8 @@ func (store *PsqlStorage) AddGauge(key string, gauge float64) error {
 	return nil
 }
 
-func (store *PsqlStorage) AddCounter(key string, counter int64) error {
-	_, err := store.db.ExecContext(store.ctx, `
+func (store *PsqlStorage) AddCounter(ctx context.Context, key string, counter int64) error {
+	_, err := store.db.ExecContext(ctx, `
 		INSERT INTO counter (key, value)
 		VALUES($1, $2) 
 		ON CONFLICT (key) 
@@ -102,14 +101,14 @@ func (store *PsqlStorage) AddCounter(key string, counter int64) error {
 	return nil
 }
 
-func (store *PsqlStorage) AddGaugeBulk(list []models.GaugeModel) error {
-	tx, err := store.db.BeginTx(store.ctx, nil)
+func (store *PsqlStorage) AddGaugeBulk(ctx context.Context, list []models.GaugeModel) error {
+	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("addGaugeBulk => %w", err)
 	}
 	defer tx.Rollback()
 	for _, model := range list {
-		_, err = tx.ExecContext(store.ctx, `
+		_, err = tx.ExecContext(ctx, `
 			INSERT INTO gauge (key, value)
 			VALUES($1, $2) 
 			ON CONFLICT (key) 
@@ -125,14 +124,14 @@ func (store *PsqlStorage) AddGaugeBulk(list []models.GaugeModel) error {
 	return nil
 }
 
-func (store *PsqlStorage) AddCounterBulk(list []models.CounterModel) error {
-	tx, err := store.db.BeginTx(store.ctx, nil)
+func (store *PsqlStorage) AddCounterBulk(ctx context.Context, list []models.CounterModel) error {
+	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("addCounterBulk => %w", err)
 	}
 	defer tx.Rollback()
 	for _, model := range list {
-		_, err = tx.ExecContext(store.ctx, `
+		_, err = tx.ExecContext(ctx, `
 			INSERT INTO counter (key, value)
 			VALUES($1, $2) 
 			ON CONFLICT (key) 
@@ -148,12 +147,12 @@ func (store *PsqlStorage) AddCounterBulk(list []models.CounterModel) error {
 	return nil
 }
 
-func (store *PsqlStorage) GetCounter(key string) (int64, bool) {
+func (store *PsqlStorage) GetCounter(ctx context.Context, key string) (int64, bool) {
 	var v sql.NullInt64
 	var row *sql.Row
 	var err error
 	for _, sec := range []int{1, 3, 5} {
-		row = store.db.QueryRowContext(store.ctx, "SELECT value FROM counter WHERE key=$1", key)
+		row = store.db.QueryRowContext(ctx, "SELECT value FROM counter WHERE key=$1", key)
 		if err = row.Err(); err != nil {
 			logrus.Info(err)
 			time.Sleep(time.Duration(sec) * time.Second)
@@ -175,12 +174,12 @@ func (store *PsqlStorage) GetCounter(key string) (int64, bool) {
 	return v.Int64, true
 }
 
-func (store *PsqlStorage) GetGauge(key string) (float64, bool) {
+func (store *PsqlStorage) GetGauge(ctx context.Context, key string) (float64, bool) {
 	var v sql.NullFloat64
 	var row *sql.Row
 	var err error
 	for _, sec := range []int{1, 3, 5} {
-		row = store.db.QueryRowContext(store.ctx, "SELECT value FROM gauge WHERE key=$1", key)
+		row = store.db.QueryRowContext(ctx, "SELECT value FROM gauge WHERE key=$1", key)
 		if err = row.Err(); err != nil {
 			logrus.Info(err)
 			time.Sleep(time.Duration(sec) * time.Second)
@@ -202,12 +201,12 @@ func (store *PsqlStorage) GetGauge(key string) (float64, bool) {
 	return v.Float64, true
 }
 
-func (store *PsqlStorage) GetAllCounters() map[string]int64 {
+func (store *PsqlStorage) GetAllCounters(ctx context.Context) map[string]int64 {
 	counter := make(map[string]int64, 0)
 	var rows *sql.Rows
 	var err error
 	for _, sec := range []int{1, 3, 5} {
-		rows, err = store.db.QueryContext(store.ctx, "SELECT key, value FROM counter")
+		rows, err = store.db.QueryContext(ctx, "SELECT key, value FROM counter")
 		if err != nil {
 			logrus.Info(err)
 			time.Sleep(time.Duration(sec) * time.Second)
@@ -236,12 +235,12 @@ func (store *PsqlStorage) GetAllCounters() map[string]int64 {
 	return counter
 }
 
-func (store *PsqlStorage) GetAllGauge() map[string]float64 {
+func (store *PsqlStorage) GetAllGauge(ctx context.Context) map[string]float64 {
 	gauge := make(map[string]float64, 0)
 	var rows *sql.Rows
 	var err error
 	for _, sec := range []int{1, 3, 5} {
-		rows, err = store.db.QueryContext(store.ctx, "SELECT key, value FROM gauge")
+		rows, err = store.db.QueryContext(ctx, "SELECT key, value FROM gauge")
 		if err != nil {
 			logrus.Info(err)
 			time.Sleep(time.Duration(sec) * time.Second)
@@ -270,7 +269,7 @@ func (store *PsqlStorage) GetAllGauge() map[string]float64 {
 	return gauge
 }
 
-func (store *PsqlStorage) SaveToFile() error {
+func (store *PsqlStorage) SaveToFile(ctx context.Context) error {
 	return nil
 }
 

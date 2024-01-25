@@ -7,16 +7,16 @@ import (
 )
 
 type IStorage interface {
-	Init(ctx context.Context) error
+	Init() error
 	Close()
-	AddGauge(key string, gauge float64) error
-	AddCounter(key string, counter int64) error
-	AddGaugeBulk(list []models.GaugeModel) error
-	AddCounterBulk(list []models.CounterModel) error
-	GetCounter(key string) (int64, bool)
-	GetGauge(key string) (float64, bool)
-	GetAllCounters() map[string]int64
-	GetAllGauge() map[string]float64
-	SaveToFile() error
+	AddGauge(ctx context.Context, key string, gauge float64) error
+	AddCounter(ctx context.Context, key string, counter int64) error
+	AddGaugeBulk(ctx context.Context, list []models.GaugeModel) error
+	AddCounterBulk(ctx context.Context, list []models.CounterModel) error
+	GetCounter(ctx context.Context, key string) (int64, bool)
+	GetGauge(ctx context.Context, key string) (float64, bool)
+	GetAllCounters(ctx context.Context) map[string]int64
+	GetAllGauge(ctx context.Context) map[string]float64
+	SaveToFile(ctx context.Context) error
 	Ping() error
 }
