@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"errors"
 	"os"
 	"os/signal"
 	"syscall"
@@ -8,28 +9,39 @@ import (
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/mertic"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memstorage"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memory"
 	"github.com/sirupsen/logrus"
 )
 
-var store = memstorage.NewMemStorage(false)
-
-var serverAddress string
-var reportInterval int
-var pollInterval int
-
 func StartAgent() {
-	config.WriteAgentConfig(&serverAddress, &reportInterval, &pollInterval)
+	conf := config.Config{}
+	conf.WriteAgentConfig()
+
+	store := memory.MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
 
 	timeTicker := time.NewTicker(time.Second)
 	go func() {
 		i := 0
 		for range timeTicker.C {
-			if i%pollInterval == 0 {
-				mertic.WriteMetric(store)
+			if i%conf.PollInterval == 0 {
+				if err := mertic.WriteMetric(store); err != nil {
+					logrus.Info(err)
+					panic(err)
+				}
 			}
-			if i%reportInterval == 0 {
-				mertic.SendMetric(serverAddress, store)
+			if i%conf.ReportInterval == 0 {
+				var err error
+				for _, sec := range []int{1, 3, 5} {
+					err = mertic.SendMetric(conf.ServerAddress, store)
+					if errors.Is(err, syscall.ECONNREFUSED) {
+						time.Sleep(time.Duration(sec) * time.Second)
+					} else {
+						break
+					}
+				}
+				if err != nil {
+					logrus.Info(err)
+				}
 			}
 			i++
 		}

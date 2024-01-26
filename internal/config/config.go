@@ -6,62 +6,77 @@ import (
 	"strconv"
 )
 
-func WriteAgentConfig(flagServerAddr *string, reportInterval *int, pollInterval *int) {
-	flag.StringVar(flagServerAddr, "a", "localhost:8080", "address and port to run server")
-	flag.IntVar(reportInterval, "r", 10, "report interval time in sec")
-	flag.IntVar(pollInterval, "p", 2, "poll interval time in sec")
+type Config struct {
+	ServerAddress   string
+	ReportInterval  int
+	PollInterval    int
+	StoreInterval   int
+	FileStoragePath string
+	IsRestore       bool
+	DBConnect       string
+}
 
+func (c *Config) WriteAgentConfig() error {
+	flag.StringVar(&c.ServerAddress, "a", "localhost:8080", "address and port to run server")
+	flag.IntVar(&c.ReportInterval, "r", 10, "report interval time in sec")
+	flag.IntVar(&c.PollInterval, "p", 2, "poll interval time in sec")
 	flag.Parse()
 
-	if envAddress := os.Getenv("ADDRESS"); envAddress != "" {
-		*flagServerAddr = envAddress
+	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
+		c.ServerAddress = envServerAddress
 	}
 
 	if envReportInterval := os.Getenv("REPORT_INTERVAL"); envReportInterval != "" {
 		envReportIntervalVal, err := strconv.Atoi(envReportInterval)
 		if err != nil {
-			panic(err)
+			return err
 		}
-		*reportInterval = envReportIntervalVal
+		c.ReportInterval = envReportIntervalVal
 	}
 
 	if envPoolInterval := os.Getenv("POLL_INTERVAL"); envPoolInterval != "" {
 		envPoolIntervalVal, err := strconv.Atoi(envPoolInterval)
 		if err != nil {
-			panic(err)
+			return err
 		}
-		*pollInterval = envPoolIntervalVal
+		c.PollInterval = envPoolIntervalVal
 	}
 
+	return nil
 }
 
-func WriteServerConfig(serverAddress *string, storeInterval *int, fileStoragePath *string, isRestore *bool) {
+// postgres://postgres:password@localhost:5433/postgres?sslmode=disable
+func (c *Config) WriteServerConfig() error {
+	flag.StringVar(&c.ServerAddress, "a", "localhost:8080", "address and port to run server")
+	flag.IntVar(&c.StoreInterval, "i", 300, "store save interval time in sec")
+	flag.StringVar(&c.FileStoragePath, "f", "/tmp/metrics-db.json", "file store path save")
+	flag.BoolVar(&c.IsRestore, "r", true, "is restore")
+	flag.StringVar(&c.DBConnect, "d", "", "db connect string")
+	flag.Parse()
+
 	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
-		*serverAddress = envServerAddress
-	} else {
-		flag.StringVar(serverAddress, "a", "localhost:8080", "address and port to run server")
+		c.ServerAddress = envServerAddress
 	}
 
 	if envStoreInterval := os.Getenv("STORE_INTERVAL"); envStoreInterval != "" {
 		envStoreIntervalVal, err := strconv.Atoi(envStoreInterval)
 		if err != nil {
-			panic(err)
+			return err
 		}
-		*storeInterval = envStoreIntervalVal
-	} else {
-		flag.IntVar(storeInterval, "i", 300, "store save interval time in sec")
+		c.StoreInterval = envStoreIntervalVal
 	}
 
 	if envFileStoragePath := os.Getenv("FILE_STORAGE_PATH"); envFileStoragePath != "" {
-		*fileStoragePath = envFileStoragePath
-	} else {
-		flag.StringVar(fileStoragePath, "f", "/tmp/metrics-db.json", "file store path save")
+		c.FileStoragePath = envFileStoragePath
 	}
 
 	if envIsRestore := os.Getenv("RESTORE"); envIsRestore != "" {
-		*isRestore = envIsRestore == "true"
-	} else {
-		flag.BoolVar(isRestore, "r", true, "is restore")
+		c.IsRestore = envIsRestore == "true"
 	}
-	flag.Parse()
+
+	if envDBConnect := os.Getenv("DATABASE_DSN"); envDBConnect != "" {
+		c.DBConnect = envDBConnect
+	}
+
+	return nil
 }

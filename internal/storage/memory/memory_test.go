@@ -1,6 +1,7 @@
-package memstorage
+package memory
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -48,14 +49,15 @@ func TestAddGauge(t *testing.T) {
 			},
 		},
 	}
-	store := NewMemStorage(false)
+	store := MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
+	ctx := context.Background()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := store.AddGauge(test.want.key, test.want.val)
+			err := store.AddGauge(ctx, test.want.key, test.want.val)
 			if err != nil {
 				panic(err)
 			}
-			val, ok := store.GetGauge(test.want.wantKey)
+			val, ok := store.GetGauge(ctx, test.want.wantKey)
 			require.Equal(t, !ok, test.want.isError)
 			if test.want.isError == false {
 				require.Equal(t, test.want.wantVal, val)
@@ -90,14 +92,15 @@ func TestAddCounter(t *testing.T) {
 			},
 		},
 	}
-	store := NewMemStorage(false)
+	store := MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
+	ctx := context.Background()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := store.AddCounter(test.want.key, test.want.val)
+			err := store.AddCounter(ctx, test.want.key, test.want.val)
 			if err != nil {
 				panic(err)
 			}
-			val, ok := store.GetCounter(test.want.wantKey)
+			val, ok := store.GetCounter(ctx, test.want.wantKey)
 			require.Equal(t, !ok, test.want.isError)
 			if test.want.isError == false {
 				require.Equal(t, test.want.wantVal, val)
