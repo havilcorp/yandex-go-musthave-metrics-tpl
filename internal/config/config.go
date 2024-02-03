@@ -14,12 +14,14 @@ type Config struct {
 	FileStoragePath string
 	IsRestore       bool
 	DBConnect       string
+	Key             string
 }
 
 func (c *Config) WriteAgentConfig() error {
 	flag.StringVar(&c.ServerAddress, "a", "localhost:8080", "address and port to run server")
 	flag.IntVar(&c.ReportInterval, "r", 10, "report interval time in sec")
 	flag.IntVar(&c.PollInterval, "p", 2, "poll interval time in sec")
+	flag.StringVar(&c.Key, "k", "", "sha256 key")
 	flag.Parse()
 
 	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
@@ -42,6 +44,10 @@ func (c *Config) WriteAgentConfig() error {
 		c.PollInterval = envPoolIntervalVal
 	}
 
+	if envKey := os.Getenv("KEY"); envKey != "" {
+		c.Key = envKey
+	}
+
 	return nil
 }
 
@@ -52,6 +58,7 @@ func (c *Config) WriteServerConfig() error {
 	flag.StringVar(&c.FileStoragePath, "f", "/tmp/metrics-db.json", "file store path save")
 	flag.BoolVar(&c.IsRestore, "r", true, "is restore")
 	flag.StringVar(&c.DBConnect, "d", "", "db connect string")
+	flag.StringVar(&c.Key, "k", "", "sha256 key")
 	flag.Parse()
 
 	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
@@ -76,6 +83,10 @@ func (c *Config) WriteServerConfig() error {
 
 	if envDBConnect := os.Getenv("DATABASE_DSN"); envDBConnect != "" {
 		c.DBConnect = envDBConnect
+	}
+
+	if envKey := os.Getenv("KEY"); envKey != "" {
+		c.Key = envKey
 	}
 
 	return nil

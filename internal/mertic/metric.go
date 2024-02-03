@@ -4,12 +4,16 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"runtime"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memory"
 )
@@ -60,13 +64,13 @@ func WriteMetric(ms memory.MemStorage) error {
 	return nil
 }
 
-func SendMetric(address string, ms memory.MemStorage) error {
+func SendMetric(config config.Config, ms memory.MemStorage) error {
 	ctx := context.Background()
 	client := resty.New()
 	gauges := ms.GetAllGauge(ctx)
 	counters := ms.GetAllCounters(ctx)
 	metrics := make([]models.MetricsRequest, 0)
-	url := fmt.Sprintf("http://%s/updates", address)
+	url := fmt.Sprintf("http://%s/updates", config.ServerAddress)
 	buf := bytes.NewBuffer(nil)
 	zb := gzip.NewWriter(buf)
 	for key, val := range gauges {
@@ -90,6 +94,12 @@ func SendMetric(address string, ms memory.MemStorage) error {
 	}
 	r := client.NewRequest()
 	r.Header.Set("Content-Encoding", "gzip")
+	if config.Key != "" {
+		h := hmac.New(sha256.New, []byte(config.Key))
+		h.Write(jsonMetric)
+		hashSha256 := hex.EncodeToString(h.Sum(nil))
+		r.Header.Set("HashSHA256", hashSha256)
+	}
 	r.SetBody(buf)
 	if _, err := r.Post(url); err != nil {
 		return fmt.Errorf("sendMetrics => %w", err)

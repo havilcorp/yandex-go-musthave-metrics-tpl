@@ -32,7 +32,7 @@ func StartAgent() {
 			if i%conf.ReportInterval == 0 {
 				var err error
 				for _, sec := range []int{1, 3, 5} {
-					err = mertic.SendMetric(conf.ServerAddress, store)
+					err = mertic.SendMetric(conf, store)
 					if errors.Is(err, syscall.ECONNREFUSED) {
 						time.Sleep(time.Duration(sec) * time.Second)
 					} else {

@@ -46,5 +46,6 @@ func LogMiddleware(h http.Handler) http.Handler {
 		h.ServeHTTP(&lw, r)
 		duration := time.Since(start)
 		logrus.Infof("%s %s (%d) %s %d byte", r.Method, r.RequestURI, responseData.status, duration, responseData.size)
+		// logrus.Infof("HashSHA256: %s", r.Header.Get("HashSHA256"))
 	})
 }
