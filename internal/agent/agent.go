@@ -2,7 +2,6 @@ package agent
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"os/signal"
 	"runtime"
@@ -72,7 +71,7 @@ func StartAgent() {
 				}
 				if i%conf.ReportInterval == 0 {
 					i = 0
-					fmt.Println(m)
+					// fmt.Println(m)
 					jobs <- *m
 				}
 			case <-chDone:
