@@ -23,31 +23,25 @@ import (
 
 func StartServer() error {
 
-	conf := config.Config{}
-	conf.WriteServerConfig()
-
-	logrus.Infof("StoreInterval: %d", conf.StoreInterval)
-	logrus.Infof("FileStoragePath: %s", conf.FileStoragePath)
-	logrus.Infof("IsRestore: %t", conf.IsRestore)
-	logrus.Infof("DBConnect: %s", conf.DBConnect)
-	logrus.Infof("Key: %s", conf.Key)
+	conf := config.NewConfig()
+	if err := conf.WriteServerConfig(); err != nil {
+		return err
+	}
+	logrus.Info(conf)
 
 	var storePtr storage.IStorage
 
 	if conf.DBConnect != "" {
-		logrus.Info("PsqlStorage")
 		storePtr = &postgresql.PsqlStorage{
-			Conf: &conf,
+			Conf: conf,
 		}
 	} else if conf.FileStoragePath != "" {
-		logrus.Info("FileStorage")
 		storePtr = &file.FileStorage{
-			Conf:    &conf,
+			Conf:    conf,
 			Gauge:   map[string]float64{},
 			Counter: map[string]int64{},
 		}
 	} else {
-		logrus.Info("MemStorage")
 		storePtr = &memory.MemStorage{
 			Gauge:   map[string]float64{},
 			Counter: map[string]int64{},
@@ -74,7 +68,7 @@ func StartServer() error {
 	server := &http.Server{Addr: conf.ServerAddress, Handler: r}
 
 	go func() {
-		logrus.Infof("Starting server on %s", conf.ServerAddress)
+		logrus.Infof("Сервер запушен %s", conf.ServerAddress)
 		if err := server.ListenAndServe(); err != nil {
 			logrus.Info(err)
 		}
@@ -104,6 +98,6 @@ func StartServer() error {
 		logrus.Info(err)
 		return err
 	}
-	logrus.Info("Приложение остановлено")
+	logrus.Info("Сервер остановлен")
 	return nil
 }

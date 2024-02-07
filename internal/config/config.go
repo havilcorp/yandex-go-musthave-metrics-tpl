@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"os"
 	"strconv"
 )
@@ -15,13 +16,36 @@ type Config struct {
 	IsRestore       bool
 	DBConnect       string
 	Key             string
+	RateLimit       int
+}
+
+func NewConfig() *Config {
+	return &Config{}
+}
+
+func (c *Config) String() string {
+	out := ""
+	out += "\n******* CONFIG *******\n"
+	out += fmt.Sprintf("* ServerAddress: %s\n", c.ServerAddress)
+	out += fmt.Sprintf("* ReportInterval: %d\n", c.ReportInterval)
+	out += fmt.Sprintf("* PollInterval: %d\n", c.PollInterval)
+	out += fmt.Sprintf("* StoreInterval: %d\n", c.StoreInterval)
+	out += fmt.Sprintf("* FileStoragePath: %s\n", c.FileStoragePath)
+	out += fmt.Sprintf("* IsRestore: %t\n", c.IsRestore)
+	out += fmt.Sprintf("* DBConnect: %s\n", c.DBConnect)
+	out += fmt.Sprintf("* Key: %s\n", c.Key)
+	out += fmt.Sprintf("* RateLimit: %d", c.RateLimit)
+	out += "\n**********************\n"
+	return out
 }
 
 func (c *Config) WriteAgentConfig() error {
+
 	flag.StringVar(&c.ServerAddress, "a", "localhost:8080", "address and port to run server")
 	flag.IntVar(&c.ReportInterval, "r", 10, "report interval time in sec")
 	flag.IntVar(&c.PollInterval, "p", 2, "poll interval time in sec")
 	flag.StringVar(&c.Key, "k", "", "sha256 key")
+	flag.IntVar(&c.RateLimit, "l", 2, "rate limit")
 	flag.Parse()
 
 	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
@@ -39,13 +63,21 @@ func (c *Config) WriteAgentConfig() error {
 	if envPoolInterval := os.Getenv("POLL_INTERVAL"); envPoolInterval != "" {
 		envPoolIntervalVal, err := strconv.Atoi(envPoolInterval)
 		if err != nil {
-			return err
+			return nil
 		}
 		c.PollInterval = envPoolIntervalVal
 	}
 
 	if envKey := os.Getenv("KEY"); envKey != "" {
 		c.Key = envKey
+	}
+
+	if envRateLimit := os.Getenv("RATE_LIMIT"); envRateLimit != "" {
+		envRateLimitVal, err := strconv.Atoi(envRateLimit)
+		if err != nil {
+			return err
+		}
+		c.RateLimit = envRateLimitVal
 	}
 
 	return nil
