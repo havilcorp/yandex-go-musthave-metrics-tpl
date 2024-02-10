@@ -30,32 +30,25 @@ func StartServer() error {
 	logrus.Info(conf)
 
 	var storePtr storage.IStorage
+	var err error
 
 	if conf.DBConnect != "" {
-		storePtr = &postgresql.PsqlStorage{
-			Conf: conf,
+		storePtr, err = postgresql.NewPsqlStorage(conf)
+		if err != nil {
+			return err
 		}
 	} else if conf.FileStoragePath != "" {
-		storePtr = &file.FileStorage{
-			Conf:    conf,
-			Gauge:   map[string]float64{},
-			Counter: map[string]int64{},
+		storePtr, err = file.NewFileStorage(conf)
+		if err != nil {
+			return err
 		}
 	} else {
-		storePtr = &memory.MemStorage{
-			Gauge:   map[string]float64{},
-			Counter: map[string]int64{},
-		}
+		storePtr = memory.NewMemStorage()
 	}
 
-	if err := storePtr.Init(); err != nil {
-		panic(err)
-	}
 	defer storePtr.Close()
 
 	r := chi.NewRouter()
-
-	// r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(middleware.LogMiddleware)
 	r.Use(middleware.GzipMiddleware)
 	r.Use(middleware.HashSHA256Middleware(conf.Key))
@@ -70,7 +63,7 @@ func StartServer() error {
 	go func() {
 		logrus.Infof("Сервер запушен %s", conf.ServerAddress)
 		if err := server.ListenAndServe(); err != nil {
-			logrus.Info(err)
+			logrus.Error(err)
 		}
 	}()
 
@@ -79,7 +72,7 @@ func StartServer() error {
 		go func() {
 			for range timeTicker.C {
 				if err := storePtr.SaveToFile(context.Background()); err != nil {
-					logrus.Info(err)
+					logrus.Error(err)
 				}
 			}
 		}()
@@ -89,13 +82,13 @@ func StartServer() error {
 	signal.Notify(terminateSignals, syscall.SIGINT)
 	<-terminateSignals
 	if err := server.Shutdown(context.Background()); err != nil {
-		logrus.Info(err)
+		logrus.Error(err)
 	}
 	if timeTicker != nil {
 		timeTicker.Stop()
 	}
 	if err := storePtr.SaveToFile(context.Background()); err != nil {
-		logrus.Info(err)
+		logrus.Error(err)
 		return err
 	}
 	logrus.Info("Сервер остановлен")

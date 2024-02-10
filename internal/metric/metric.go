@@ -27,9 +27,9 @@ type Metric struct {
 	delta  map[string]int64
 }
 
-func NewMetric(mutex *sync.Mutex, config *config.Config) *Metric {
+func NewMetric(config *config.Config) *Metric {
 	return &Metric{
-		mutex:  mutex,
+		mutex:  &sync.Mutex{},
 		config: config,
 		value:  make(map[string]float64, 0),
 		delta:  make(map[string]int64, 0),

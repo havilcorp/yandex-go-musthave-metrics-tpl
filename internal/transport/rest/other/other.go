@@ -49,7 +49,7 @@ func (h *handler) MainPageHandler(rw http.ResponseWriter, r *http.Request) {
 	`, liCounter, liGauge)
 	_, err := rw.Write([]byte(html))
 	if err != nil {
-		logrus.Info(err)
+		logrus.Error(err)
 	}
 }
 

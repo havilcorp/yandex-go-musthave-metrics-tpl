@@ -27,7 +27,7 @@ func workerSendeRequest(jobs <-chan metric.Metric, wg *sync.WaitGroup) {
 			}
 		}
 		if err != nil {
-			logrus.Info(err)
+			logrus.Error(err)
 		}
 	}
 }
@@ -35,7 +35,7 @@ func workerSendeRequest(jobs <-chan metric.Metric, wg *sync.WaitGroup) {
 func StartAgent() {
 	conf := config.NewConfig()
 	if err := conf.WriteAgentConfig(); err != nil {
-		logrus.Info(err)
+		logrus.Error(err)
 		return
 	}
 	logrus.Info(conf)
@@ -54,38 +54,40 @@ func StartAgent() {
 	chDone := make(chan struct{})
 	defer close(chDone)
 
-	var mutex sync.Mutex
-	m := metric.NewMetric(&mutex, conf)
+	m := metric.NewMetric(conf)
 
-	timeTracker := time.NewTicker(time.Second)
-	defer timeTracker.Stop()
-	go func(chDone chan struct{}) {
-		i := 0
+	timePoolTracker := time.NewTicker(time.Duration(conf.PollInterval) * time.Second)
+	go func() {
 		for {
 			select {
-			case <-timeTracker.C:
-				i++
-				if i%conf.PollInterval == 0 {
-					go m.WriteMain()
-					go m.WriteGopsutil()
-				}
-				if i%conf.ReportInterval == 0 {
-					i = 0
-					// fmt.Println(m)
-					jobs <- *m
-				}
+			case <-timePoolTracker.C:
+				go m.WriteMain()
+				go m.WriteGopsutil()
 			case <-chDone:
 				return
 			}
 		}
-	}(chDone)
+	}()
+
+	timeReportTracker := time.NewTicker(time.Duration(conf.ReportInterval) * time.Second)
+	go func() {
+		for {
+			select {
+			case <-timeReportTracker.C:
+				jobs <- *m
+			case <-chDone:
+				return
+			}
+		}
+	}()
 
 	terminateSignals := make(chan os.Signal, 1)
 	signal.Notify(terminateSignals, syscall.SIGINT)
 	<-terminateSignals
-	close(jobs)
+	timePoolTracker.Stop()
+	timeReportTracker.Stop()
 	chDone <- struct{}{}
+	close(jobs)
 	wg.Wait()
-	timeTracker.Stop()
 	logrus.Info("Агент остановлен")
 }

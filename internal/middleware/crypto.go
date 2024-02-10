@@ -17,19 +17,19 @@ func HashSHA256Middleware(key string) func(http.Handler) http.Handler {
 			if r.Header.Get("HashSHA256") != "" {
 				hexSha256, err := hex.DecodeString(r.Header.Get("HashSHA256"))
 				if err != nil {
-					logrus.Info(err)
+					logrus.Error(err)
 					w.WriteHeader(http.StatusBadRequest)
 					return
 				}
 				body, err := io.ReadAll(r.Body)
 				if err != nil {
-					logrus.Info(err)
+					logrus.Error(err)
 					w.WriteHeader(http.StatusBadRequest)
 					return
 				}
 				err = r.Body.Close()
 				if err != nil {
-					logrus.Info(err)
+					logrus.Error(err)
 					w.WriteHeader(http.StatusBadRequest)
 					return
 				}
