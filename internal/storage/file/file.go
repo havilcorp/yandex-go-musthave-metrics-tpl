@@ -11,6 +11,7 @@ import (
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage"
 )
 
 type FileStorage struct {
@@ -19,14 +20,19 @@ type FileStorage struct {
 	Counter map[string]int64
 }
 
-func (store *FileStorage) Init() error {
+func NewFileStorage(conf *config.Config) (*FileStorage, error) {
 	ctx := context.Background()
-	if store.Conf.IsRestore {
+	fileStorage := FileStorage{
+		Conf:    conf,
+		Gauge:   map[string]float64{},
+		Counter: map[string]int64{},
+	}
+	if conf.IsRestore {
 		var err error
 		for _, sec := range []int{1, 3, 5} {
-			err = store.LoadFromFile(ctx)
+			err = fileStorage.LoadFromFile(ctx)
 			if errors.Is(err, fs.ErrNotExist) {
-				return nil
+				return &fileStorage, nil
 			}
 			if errors.Is(err, fs.ErrClosed) {
 				time.Sleep(time.Duration(sec) * time.Second)
@@ -35,10 +41,10 @@ func (store *FileStorage) Init() error {
 			}
 		}
 		if err != nil {
-			return fmt.Errorf("init => %w", err)
+			return nil, fmt.Errorf("init => %w", err)
 		}
 	}
-	return nil
+	return &fileStorage, nil
 }
 
 func (store *FileStorage) Close() {
@@ -87,14 +93,20 @@ func (store *FileStorage) AddCounterBulk(ctx context.Context, list []models.Coun
 	return nil
 }
 
-func (store *FileStorage) GetCounter(ctx context.Context, key string) (int64, bool) {
+func (store *FileStorage) GetCounter(ctx context.Context, key string) (int64, error) {
 	val, ok := store.Counter[key]
-	return val, ok
+	if !ok {
+		return 0, storage.ErrValueNotFound
+	}
+	return val, nil
 }
 
-func (store *FileStorage) GetGauge(ctx context.Context, key string) (float64, bool) {
+func (store *FileStorage) GetGauge(ctx context.Context, key string) (float64, error) {
 	val, ok := store.Gauge[key]
-	return val, ok
+	if !ok {
+		return 0, storage.ErrValueNotFound
+	}
+	return val, nil
 }
 
 func (store *FileStorage) GetAllCounters(ctx context.Context) map[string]int64 {

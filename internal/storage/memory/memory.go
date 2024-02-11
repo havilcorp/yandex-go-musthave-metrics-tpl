@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage"
 )
 
 type MemStorage struct {
@@ -12,10 +13,12 @@ type MemStorage struct {
 	Counter map[string]int64
 }
 
-func (store *MemStorage) Init() error {
-	return nil
+func NewMemStorage() *MemStorage {
+	return &MemStorage{
+		Gauge:   map[string]float64{},
+		Counter: map[string]int64{},
+	}
 }
-
 func (store *MemStorage) Close() {
 
 }
@@ -52,14 +55,20 @@ func (store *MemStorage) AddCounterBulk(ctx context.Context, list []models.Count
 	return nil
 }
 
-func (store *MemStorage) GetCounter(ctx context.Context, key string) (int64, bool) {
+func (store *MemStorage) GetCounter(ctx context.Context, key string) (int64, error) {
 	val, ok := store.Counter[key]
-	return val, ok
+	if !ok {
+		return 0, storage.ErrValueNotFound
+	}
+	return val, nil
 }
 
-func (store *MemStorage) GetGauge(ctx context.Context, key string) (float64, bool) {
+func (store *MemStorage) GetGauge(ctx context.Context, key string) (float64, error) {
 	val, ok := store.Gauge[key]
-	return val, ok
+	if !ok {
+		return 0, storage.ErrValueNotFound
+	}
+	return val, nil
 }
 
 func (store *MemStorage) GetAllCounters(ctx context.Context) map[string]int64 {

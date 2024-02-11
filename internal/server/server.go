@@ -10,91 +10,60 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/middleware"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/file"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memory"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/postgresql"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/transport/rest/metricupdate"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/transport/rest/metricvalue"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/transport/rest/other"
 	"github.com/sirupsen/logrus"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func StartServer() error {
 
-	conf := config.Config{}
-	conf.WriteServerConfig()
-
-	logrus.Infof("StoreInterval: %d", conf.StoreInterval)
-	logrus.Infof("FileStoragePath: %s", conf.FileStoragePath)
-	logrus.Infof("IsRestore: %t", conf.IsRestore)
-	logrus.Infof("DBConnect: %s", conf.DBConnect)
+	conf := config.NewConfig()
+	if err := conf.WriteServerConfig(); err != nil {
+		return err
+	}
+	logrus.Info(conf)
 
 	var storePtr storage.IStorage
+	var err error
 
 	if conf.DBConnect != "" {
-		logrus.Info("PsqlStorage")
-		storePtr = &postgresql.PsqlStorage{
-			Conf: &conf,
+		storePtr, err = postgresql.NewPsqlStorage(conf)
+		if err != nil {
+			return err
 		}
 	} else if conf.FileStoragePath != "" {
-		logrus.Info("FileStorage")
-		storePtr = &file.FileStorage{
-			Conf:    &conf,
-			Gauge:   map[string]float64{},
-			Counter: map[string]int64{},
+		storePtr, err = file.NewFileStorage(conf)
+		if err != nil {
+			return err
 		}
 	} else {
-		logrus.Info("MemStorage")
-		storePtr = &memory.MemStorage{
-			Gauge:   map[string]float64{},
-			Counter: map[string]int64{},
-		}
+		storePtr = memory.NewMemStorage()
 	}
 
-	if err := storePtr.Init(); err != nil {
-		panic(err)
-	}
 	defer storePtr.Close()
 
-	handlers.SetStore(storePtr)
-
 	r := chi.NewRouter()
-
-	// r.Use(middleware.Timeout(60 * time.Second))
-
 	r.Use(middleware.LogMiddleware)
 	r.Use(middleware.GzipMiddleware)
+	r.Use(middleware.HashSHA256Middleware(conf.Key))
 
-	r.Get("/", handlers.MainPageHandler)
-
-	r.Get("/ping", handlers.CheckDBHandler)
-
-	r.Route("/value", func(r chi.Router) {
-		r.Post("/", handlers.GetMetricHandler)
-		r.Get("/counter/{name}", handlers.GetCounterMetricHandler)
-		r.Get("/gauge/{name}", handlers.GetGaugeMetricHandler)
-	})
-
-	r.Route("/updates", func(r chi.Router) {
-		r.Post("/", handlers.UpdateBulkHandler)
-	})
-
-	r.Route("/update", func(r chi.Router) {
-		r.Post("/", handlers.UpdateHandler)
-		r.Post("/counter/{name}/{value}", handlers.UpdateCounterHandler)
-		r.Post("/gauge/{name}/{value}", handlers.UpdateGaugeHandler)
-		r.Post("/{all}/{name}/{value}", handlers.BadRequestHandler)
-	})
+	metricupdate.NewHandler(storePtr).Register(r)
+	metricvalue.NewHandler(storePtr).Register(r)
+	other.NewHandler(storePtr).Register(r)
 
 	var timeTicker *time.Ticker
 	server := &http.Server{Addr: conf.ServerAddress, Handler: r}
 
 	go func() {
-		logrus.Infof("Starting server on %s", conf.ServerAddress)
+		logrus.Infof("Сервер запушен %s", conf.ServerAddress)
 		if err := server.ListenAndServe(); err != nil {
-			logrus.Info(err)
+			logrus.Error(err)
 		}
 	}()
 
@@ -103,7 +72,7 @@ func StartServer() error {
 		go func() {
 			for range timeTicker.C {
 				if err := storePtr.SaveToFile(context.Background()); err != nil {
-					logrus.Info(err)
+					logrus.Error(err)
 				}
 			}
 		}()
@@ -113,15 +82,15 @@ func StartServer() error {
 	signal.Notify(terminateSignals, syscall.SIGINT)
 	<-terminateSignals
 	if err := server.Shutdown(context.Background()); err != nil {
-		logrus.Info(err)
+		logrus.Error(err)
 	}
 	if timeTicker != nil {
 		timeTicker.Stop()
 	}
 	if err := storePtr.SaveToFile(context.Background()); err != nil {
-		logrus.Info(err)
+		logrus.Error(err)
 		return err
 	}
-	logrus.Info("Приложение остановлено")
+	logrus.Info("Сервер остановлен")
 	return nil
 }

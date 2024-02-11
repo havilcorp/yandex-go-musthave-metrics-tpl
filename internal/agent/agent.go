@@ -4,52 +4,90 @@ import (
 	"errors"
 	"os"
 	"os/signal"
+	"runtime"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/mertic"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/storage/memory"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/metric"
 	"github.com/sirupsen/logrus"
 )
 
+func workerSendeRequest(jobs <-chan metric.Metric, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for job := range jobs {
+		var err error
+		for _, sec := range []int{1, 3, 5} {
+			err = job.Send()
+			if errors.Is(err, syscall.ECONNREFUSED) {
+				time.Sleep(time.Duration(sec) * time.Second)
+			} else {
+				break
+			}
+		}
+		if err != nil {
+			logrus.Error(err)
+		}
+	}
+}
+
 func StartAgent() {
-	conf := config.Config{}
-	conf.WriteAgentConfig()
+	conf := config.NewConfig()
+	if err := conf.WriteAgentConfig(); err != nil {
+		logrus.Error(err)
+		return
+	}
+	logrus.Info(conf)
 
-	store := memory.MemStorage{Gauge: map[string]float64{}, Counter: map[string]int64{}}
+	numJobs := runtime.GOMAXPROCS(0)
+	numPool := conf.RateLimit
 
-	timeTicker := time.NewTicker(time.Second)
+	jobs := make(chan metric.Metric, numJobs)
+
+	var wg sync.WaitGroup
+	for i := 0; i < numPool; i++ {
+		wg.Add(1)
+		go workerSendeRequest(jobs, &wg)
+	}
+
+	chDone := make(chan struct{})
+	defer close(chDone)
+
+	m := metric.NewMetric(conf)
+
+	timePoolTracker := time.NewTicker(time.Duration(conf.PollInterval) * time.Second)
 	go func() {
-		i := 0
-		for range timeTicker.C {
-			if i%conf.PollInterval == 0 {
-				if err := mertic.WriteMetric(store); err != nil {
-					logrus.Info(err)
-					panic(err)
-				}
+		for {
+			select {
+			case <-timePoolTracker.C:
+				go m.WriteMain()
+				go m.WriteGopsutil()
+			case <-chDone:
+				return
 			}
-			if i%conf.ReportInterval == 0 {
-				var err error
-				for _, sec := range []int{1, 3, 5} {
-					err = mertic.SendMetric(conf.ServerAddress, store)
-					if errors.Is(err, syscall.ECONNREFUSED) {
-						time.Sleep(time.Duration(sec) * time.Second)
-					} else {
-						break
-					}
-				}
-				if err != nil {
-					logrus.Info(err)
-				}
+		}
+	}()
+
+	timeReportTracker := time.NewTicker(time.Duration(conf.ReportInterval) * time.Second)
+	go func() {
+		for {
+			select {
+			case <-timeReportTracker.C:
+				jobs <- *m
+			case <-chDone:
+				return
 			}
-			i++
 		}
 	}()
 
 	terminateSignals := make(chan os.Signal, 1)
 	signal.Notify(terminateSignals, syscall.SIGINT)
 	<-terminateSignals
-	timeTicker.Stop()
+	timePoolTracker.Stop()
+	timeReportTracker.Stop()
+	chDone <- struct{}{}
+	close(jobs)
+	wg.Wait()
 	logrus.Info("Агент остановлен")
 }
