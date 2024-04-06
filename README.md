@@ -59,10 +59,25 @@ git fetch template && git checkout template/main .github
 
 17. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -file-storage-path=/tmp/metrics-db.json -database-dsn='postgres://postgres:password@localhost:5433/postgres?sslmode=disable' -key='test123' -test.run=^TestIteration14$
 
+## mockery
+
+```shell
+$ docker run -v "$PWD":/src -w /src vektra/mockery --all
+```
+
+## Покрытие
+
+```shell
+$ go test -coverprofile=coverage.out ./internal...
+$ go tool cover -func=coverage.out
+```
+
 ## Запуск автотестов 1
 
+```shell
 /Users/kotvkompe/Desktop/YP/yandex-go-musthave-metrics-tpl
 ./metricstest-darwin-arm64 -test.v -test.run=^TestIteration7$ -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8081
+```
 
 Для успешного запуска автотестов называйте ветки `iter<number>`, где `<number>` — порядковый номер инкремента. Например, в ветке с названием `iter4` запустятся автотесты для инкрементов с первого по четвёртый.
 

@@ -40,7 +40,6 @@ func (c *Config) String() string {
 }
 
 func (c *Config) WriteAgentConfig() error {
-
 	flag.StringVar(&c.ServerAddress, "a", "localhost:8080", "address and port to run server")
 	flag.IntVar(&c.ReportInterval, "r", 10, "report interval time in sec")
 	flag.IntVar(&c.PollInterval, "p", 2, "poll interval time in sec")

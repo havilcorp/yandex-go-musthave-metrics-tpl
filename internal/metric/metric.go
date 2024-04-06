@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
 )
@@ -103,12 +103,12 @@ func (m *Metric) Send() error {
 	url := fmt.Sprintf("http://%s/updates", m.config.ServerAddress)
 	buf := bytes.NewBuffer(nil)
 	zb := gzip.NewWriter(buf)
-	metrics := make([]models.MetricsRequest, 0)
+	metrics := make([]domain.MetricRequest, 0)
 	for key, value := range m.value {
-		metrics = append(metrics, models.MetricsRequest{ID: key, MType: "gauge", Value: &value})
+		metrics = append(metrics, domain.MetricRequest{ID: key, MType: "gauge", Value: &value})
 	}
 	for key, delta := range m.delta {
-		metrics = append(metrics, models.MetricsRequest{ID: key, MType: "counter", Delta: &delta})
+		metrics = append(metrics, domain.MetricRequest{ID: key, MType: "counter", Delta: &delta})
 	}
 	jsonMetric, err := json.Marshal(metrics)
 	if err != nil {
