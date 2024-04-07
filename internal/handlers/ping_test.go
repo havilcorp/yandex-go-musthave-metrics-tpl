@@ -34,6 +34,7 @@ func TestPingHandler_CheckDBHandler(t *testing.T) {
 			h := NewPingHandler(pinger)
 			h.Ping(rw, r)
 			res := rw.Result()
+			defer res.Body.Close()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 		})
 	}

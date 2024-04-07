@@ -21,12 +21,8 @@ import (
 func TestMetricHandler_UpdateBulkHandler(t *testing.T) {
 	metricHandler := mocks.NewIMetric(t)
 
-	// mainHandler.On("AddGauge", mock.Anything, "key", "gauge").Return(nil)
-	// mainHandler.On("AddCounter", mock.Anything, "key", "counter").Return(nil)
 	metricHandler.On("AddGaugeBulk", mock.Anything, []domain.Gauge{{Key: "GAUGE", Value: float64(1.1)}}).Return(nil)
 	metricHandler.On("AddCounterBulk", mock.Anything, []domain.Counter{{Key: "COUNTER", Value: int64(1)}}).Return(nil)
-	// mainHandler.On("GetCounter", mock.Anything, "key").Return(int64(1), nil)
-	// mainHandler.On("GetGauge", mock.Anything, "key").Return(float64(1.1), nil)
 
 	delta := int64(1)
 	value := float64(1.1)
