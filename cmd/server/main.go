@@ -18,6 +18,7 @@ import (
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/middleware"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/repositories"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/repositories/metric"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/sirupsen/logrus"
 )
 

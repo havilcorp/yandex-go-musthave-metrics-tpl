@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
+	"github.com/sirupsen/logrus"
 )
 
 //go:generate mockery --name Pinger
@@ -28,6 +29,7 @@ func (h *PingHandler) Register(router *chi.Mux) {
 // Ping хендлер для проверки подлкючения к базе данных
 func (h *PingHandler) Ping(rw http.ResponseWriter, r *http.Request) {
 	if err := h.pingService.Ping(); err != nil {
+		logrus.Error(err)
 		rw.WriteHeader(http.StatusInternalServerError)
 	} else {
 		rw.WriteHeader(http.StatusOK)
