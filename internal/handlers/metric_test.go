@@ -10,7 +10,10 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/repositories/metric"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/mocks"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -469,4 +472,20 @@ func TestMetricHandler_GetGaugeMetricHandler(t *testing.T) {
 			// }
 		})
 	}
+}
+
+func Example() {
+	conf := config.NewConfig()
+	err := conf.WriteServerConfig()
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+	metricFactory, err := metric.MetricFactory("memory", conf, nil)
+	if err != nil {
+		logrus.Error(err)
+		return
+	}
+	r := chi.NewRouter()
+	NewMetricHandler(metricFactory).Register(r)
 }

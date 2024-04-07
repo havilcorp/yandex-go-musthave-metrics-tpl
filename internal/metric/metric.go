@@ -47,6 +47,11 @@ func (m *Metric) String() string {
 	return out
 }
 
+// WriteGopsutil получение дополнительных метрик
+//
+//   - TotalMemory
+//   - FreeMemory
+//   - CPUutilization
 func (m *Metric) WriteGopsutil() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -62,6 +67,37 @@ func (m *Metric) WriteGopsutil() {
 	}
 }
 
+// WriteMain получение основных метрик
+//
+//   - Alloc
+//   - BuckHashSys
+//   - Frees
+//   - GCCPUFraction
+//   - GCSys
+//   - HeapAlloc
+//   - HeapIdle
+//   - HeapInuse
+//   - HeapObjects
+//   - HeapReleased
+//   - HeapSys
+//   - LastGC
+//   - Lookups
+//   - MCacheInuse
+//   - MCacheSys
+//   - MSpanInuse
+//   - MSpanSys
+//   - Mallocs
+//   - NextGC
+//   - NumForcedGC
+//   - NumGC
+//   - OtherSys
+//   - PauseTotalNs
+//   - StackInuse
+//   - StackSys
+//   - Sys
+//   - TotalAlloc
+//   - RandomValue
+//   - PollCount
 func (m *Metric) WriteMain() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -98,6 +134,7 @@ func (m *Metric) WriteMain() {
 	m.delta["PollCount"] = int64(1)
 }
 
+// Send отправка метрик на сервер
 func (m *Metric) Send() error {
 	client := resty.New()
 	url := fmt.Sprintf("http://%s/updates", m.config.ServerAddress)

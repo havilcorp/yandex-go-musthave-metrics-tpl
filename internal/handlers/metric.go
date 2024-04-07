@@ -1,3 +1,4 @@
+// Роуты сервера
 package handlers
 
 import (
@@ -26,12 +27,14 @@ type MetricHandler struct {
 	metric IMetric
 }
 
+// NewMetricHandler инициализация хендлера
 func NewMetricHandler(metric IMetric) *MetricHandler {
 	return &MetricHandler{
 		metric: metric,
 	}
 }
 
+// Register регистрация роутов
 func (h *MetricHandler) Register(router *chi.Mux) {
 	router.Route("/updates", func(r chi.Router) {
 		r.Post("/", h.UpdateBulkHandler)
@@ -49,6 +52,7 @@ func (h *MetricHandler) Register(router *chi.Mux) {
 	})
 }
 
+// UpdateBulkHandler хендлер обновления метрик пачкой
 func (h *MetricHandler) UpdateBulkHandler(rw http.ResponseWriter, r *http.Request) {
 	metrics := make([]domain.MetricRequest, 0)
 	dec := json.NewDecoder(r.Body)
@@ -81,6 +85,7 @@ func (h *MetricHandler) UpdateBulkHandler(rw http.ResponseWriter, r *http.Reques
 	}
 }
 
+// UpdateHandler хендлер обновления одной из метрик
 func (h *MetricHandler) UpdateHandler(rw http.ResponseWriter, r *http.Request) {
 	var req domain.MetricRequest
 	rw.Header().Set("Content-Type", "application/json")
@@ -144,6 +149,7 @@ func (h *MetricHandler) UpdateHandler(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UpdateCounterHandler хендлер обновления метрики
 func (h *MetricHandler) UpdateCounterHandler(rw http.ResponseWriter, r *http.Request) {
 	marketName := chi.URLParam(r, "name")
 	marketVal := chi.URLParam(r, "value")
@@ -161,6 +167,7 @@ func (h *MetricHandler) UpdateCounterHandler(rw http.ResponseWriter, r *http.Req
 	rw.WriteHeader(http.StatusOK)
 }
 
+// UpdateGaugeHandler хендлер обновления метрики
 func (h *MetricHandler) UpdateGaugeHandler(rw http.ResponseWriter, r *http.Request) {
 	marketName := chi.URLParam(r, "name")
 	marketVal := chi.URLParam(r, "value")
@@ -182,6 +189,7 @@ func (h *MetricHandler) BadRequestHandler(rw http.ResponseWriter, r *http.Reques
 	rw.WriteHeader(http.StatusBadRequest)
 }
 
+// GetMetricHandler хендлер выдачи значения метрик
 func (h *MetricHandler) GetMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	var req domain.MetricRequest
 	rw.Header().Set("Content-Type", "application/json")
@@ -243,6 +251,7 @@ func (h *MetricHandler) GetMetricHandler(rw http.ResponseWriter, r *http.Request
 	}
 }
 
+// GetCounterMetricHandler хендлер выдачи значения метрики
 func (h *MetricHandler) GetCounterMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	marketName := chi.URLParam(r, "name")
 	val, err := h.metric.GetCounter(r.Context(), marketName)
@@ -263,6 +272,7 @@ func (h *MetricHandler) GetCounterMetricHandler(rw http.ResponseWriter, r *http.
 	}
 }
 
+// GetGaugeMetricHandler хендлер выдачи значения метрики
 func (h *MetricHandler) GetGaugeMetricHandler(rw http.ResponseWriter, r *http.Request) {
 	marketName := chi.URLParam(r, "name")
 	val, err := h.metric.GetGauge(r.Context(), marketName)

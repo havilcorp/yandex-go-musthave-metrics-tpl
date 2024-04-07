@@ -15,6 +15,7 @@ type PsqlStorage struct {
 	db *sql.DB
 }
 
+// NewPsqlStorage инициализация хранилища в базе даннных + создание структуры
 func NewPsqlStorage(conf *config.Config, db *sql.DB) (*PsqlStorage, error) {
 	ctx := context.Background()
 	psqlStorage := PsqlStorage{
@@ -26,6 +27,7 @@ func NewPsqlStorage(conf *config.Config, db *sql.DB) (*PsqlStorage, error) {
 	return &psqlStorage, nil
 }
 
+// Bootstrap создание структуры
 func (store *PsqlStorage) Bootstrap(ctx context.Context) error {
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -51,6 +53,7 @@ func (store *PsqlStorage) Bootstrap(ctx context.Context) error {
 	return tx.Commit()
 }
 
+// AddGauge добавление метрики
 func (store *PsqlStorage) AddGauge(ctx context.Context, key string, gauge float64) error {
 	_, err := store.db.ExecContext(ctx, `
 		INSERT INTO gauge (key, value)
@@ -64,6 +67,7 @@ func (store *PsqlStorage) AddGauge(ctx context.Context, key string, gauge float6
 	return nil
 }
 
+// AddCounter добавление метрики
 func (store *PsqlStorage) AddCounter(ctx context.Context, key string, counter int64) error {
 	_, err := store.db.ExecContext(ctx, `
 		INSERT INTO counter (key, value)
@@ -77,6 +81,7 @@ func (store *PsqlStorage) AddCounter(ctx context.Context, key string, counter in
 	return nil
 }
 
+// AddGaugeBulk добавление метрики массивом в транзации
 func (store *PsqlStorage) AddGaugeBulk(ctx context.Context, list []domain.Gauge) error {
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -100,6 +105,7 @@ func (store *PsqlStorage) AddGaugeBulk(ctx context.Context, list []domain.Gauge)
 	return nil
 }
 
+// AddCounterBulk добавление метрики массивом в транзации
 func (store *PsqlStorage) AddCounterBulk(ctx context.Context, list []domain.Counter) error {
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -123,6 +129,7 @@ func (store *PsqlStorage) AddCounterBulk(ctx context.Context, list []domain.Coun
 	return nil
 }
 
+// GetGauge получение значения метрики
 func (store *PsqlStorage) GetGauge(ctx context.Context, key string) (float64, error) {
 	var v sql.NullFloat64
 	var row *sql.Row
@@ -150,6 +157,7 @@ func (store *PsqlStorage) GetGauge(ctx context.Context, key string) (float64, er
 	return v.Float64, nil
 }
 
+// GetCounter получение значения метрики
 func (store *PsqlStorage) GetCounter(ctx context.Context, key string) (int64, error) {
 	var v sql.NullInt64
 	var row *sql.Row
@@ -177,6 +185,7 @@ func (store *PsqlStorage) GetCounter(ctx context.Context, key string) (int64, er
 	return v.Int64, nil
 }
 
+// GetAllGauge получение всех значений метрики
 func (store *PsqlStorage) GetAllGauge(ctx context.Context) (map[string]float64, error) {
 	gauge := make(map[string]float64, 0)
 	var rows *sql.Rows
@@ -211,6 +220,7 @@ func (store *PsqlStorage) GetAllGauge(ctx context.Context) (map[string]float64, 
 	return gauge, nil
 }
 
+// GetAllCounters получение всех значений метрики
 func (store *PsqlStorage) GetAllCounters(ctx context.Context) (map[string]int64, error) {
 	counter := make(map[string]int64, 0)
 	var rows *sql.Rows

@@ -1,3 +1,4 @@
+// Сервер для принятия и хранения метрик
 package main
 
 import (
@@ -20,6 +21,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// main входная точка запуска сервера
 func main() {
 	conf := config.NewConfig()
 	err := conf.WriteServerConfig()

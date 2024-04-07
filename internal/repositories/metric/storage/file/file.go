@@ -19,6 +19,7 @@ type FileStorage struct {
 	Counter map[string]int64
 }
 
+// NewFileStorage инициализация файлового хранилища
 func NewFileStorage(conf *config.Config) (*FileStorage, error) {
 	ctx := context.Background()
 	fileStorage := FileStorage{
@@ -46,6 +47,7 @@ func NewFileStorage(conf *config.Config) (*FileStorage, error) {
 	return &fileStorage, nil
 }
 
+// AddGauge добавление метрики
 func (store *FileStorage) AddGauge(ctx context.Context, key string, gauge float64) error {
 	store.Gauge[key] = gauge
 	if store.Conf.StoreInterval == 0 {
@@ -56,6 +58,7 @@ func (store *FileStorage) AddGauge(ctx context.Context, key string, gauge float6
 	return nil
 }
 
+// AddCounter добавление метрики
 func (store *FileStorage) AddCounter(ctx context.Context, key string, counter int64) error {
 	if val, ok := store.Counter[key]; ok {
 		store.Counter[key] = val + counter
@@ -70,6 +73,7 @@ func (store *FileStorage) AddCounter(ctx context.Context, key string, counter in
 	return nil
 }
 
+// AddGaugeBulk добавление метрики массивом
 func (store *FileStorage) AddGaugeBulk(ctx context.Context, list []domain.Gauge) error {
 	for _, model := range list {
 		if err := store.AddGauge(ctx, model.Key, model.Value); err != nil {
@@ -79,6 +83,7 @@ func (store *FileStorage) AddGaugeBulk(ctx context.Context, list []domain.Gauge)
 	return nil
 }
 
+// AddCounterBulk добавление метрики массивом
 func (store *FileStorage) AddCounterBulk(ctx context.Context, list []domain.Counter) error {
 	for _, model := range list {
 		if err := store.AddCounter(ctx, model.Key, model.Value); err != nil {
@@ -88,14 +93,7 @@ func (store *FileStorage) AddCounterBulk(ctx context.Context, list []domain.Coun
 	return nil
 }
 
-func (store *FileStorage) GetCounter(ctx context.Context, key string) (int64, error) {
-	val, ok := store.Counter[key]
-	if !ok {
-		return 0, domain.ErrValueNotFound
-	}
-	return val, nil
-}
-
+// GetGauge получение значения метрики
 func (store *FileStorage) GetGauge(ctx context.Context, key string) (float64, error) {
 	val, ok := store.Gauge[key]
 	if !ok {
@@ -104,14 +102,26 @@ func (store *FileStorage) GetGauge(ctx context.Context, key string) (float64, er
 	return val, nil
 }
 
-func (store *FileStorage) GetAllCounters(ctx context.Context) (map[string]int64, error) {
-	return store.Counter, nil
+// GetCounter получение значения метрики
+func (store *FileStorage) GetCounter(ctx context.Context, key string) (int64, error) {
+	val, ok := store.Counter[key]
+	if !ok {
+		return 0, domain.ErrValueNotFound
+	}
+	return val, nil
 }
 
+// GetAllGauge получение всех значений метрики
 func (store *FileStorage) GetAllGauge(ctx context.Context) (map[string]float64, error) {
 	return store.Gauge, nil
 }
 
+// GetAllCounters получение всех значений метрики
+func (store *FileStorage) GetAllCounters(ctx context.Context) (map[string]int64, error) {
+	return store.Counter, nil
+}
+
+// SaveToFile сохранение всех метрик в файл
 func (store *FileStorage) SaveToFile(ctx context.Context) error {
 	listGauges, err := store.GetAllGauge(ctx)
 	if err != nil {
@@ -135,6 +145,7 @@ func (store *FileStorage) SaveToFile(ctx context.Context) error {
 	return nil
 }
 
+// SaveToFile загрузка всех метрик из файла
 func (store *FileStorage) LoadFromFile(ctx context.Context) error {
 	file, err := os.ReadFile(store.Conf.FileStoragePath)
 	if err != nil {

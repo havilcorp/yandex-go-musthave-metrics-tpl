@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
+	_ "github.com/swaggo/http-swagger/example/go-chi/docs"
 )
 
 type IMain interface {
@@ -24,10 +25,19 @@ func NewMainHandler(main IMain) *MainHandler {
 	}
 }
 
+// Register регистрация роутов
 func (h *MainHandler) Register(router *chi.Mux) {
 	router.Get("/", h.MainPageHandler)
+	// router.Get("/swagger*", httpSwagger.Handler())
 }
 
+// MainPageHandler godoc
+// @Tags Storage
+// @Summary Сохранение содержимого bucket-а
+// @Description Получение всех значений метрик
+// @Success 200 {string} string "OK"
+// @Failure 500 {string} string "Внутренняя ошибка"
+// @Router / [get]
 func (h *MainHandler) MainPageHandler(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "text/html")
 	liCounter := ""

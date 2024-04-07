@@ -8,10 +8,12 @@ import (
 
 type PPROFHandler struct{}
 
+// NewPPROFHandler инициализация хендлера для сбора статистики
 func NewPPROFHandler() *PPROFHandler {
 	return &PPROFHandler{}
 }
 
+// Register регистрация роутов
 func (h *PPROFHandler) Register(router *chi.Mux) {
 	// router.HandleFunc("/pprof/*", pprof.Index)
 	router.HandleFunc("/debug/pprof/profile", pprof.Profile)

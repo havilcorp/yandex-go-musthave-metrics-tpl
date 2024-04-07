@@ -1,3 +1,4 @@
+// Агент для отправки метрик на сервер
 package main
 
 import (
@@ -32,6 +33,7 @@ func workerSendeRequest(jobs <-chan metric.Metric, wg *sync.WaitGroup) {
 	}
 }
 
+// main входная точка запуска агента
 func main() {
 	// conf, err := config.ConfigFactory("agent")
 	conf := config.NewConfig()

@@ -7,6 +7,14 @@
 1. Склонируйте репозиторий в любую подходящую директорию на вашем компьютере.
 2. В корне репозитория выполните команду `go mod init <name>` (где `<name>` — адрес вашего репозитория на GitHub без префикса `https://`) для создания модуля.
 
+## GoDoc
+
+```shell
+godoc -http=:8080 -play
+```
+
+http://localhost:8080/pkg/github.com/havilcorp/yandex-go-musthave-metrics-tpl/?m=all
+
 ## Обновление шаблона
 
 Чтобы иметь возможность получать обновления автотестов и других частей шаблона, выполните команду:
@@ -68,8 +76,8 @@ $ docker run -v "$PWD":/src -w /src vektra/mockery --all
 ## Покрытие
 
 ```shell
-$ go test -coverprofile=coverage.out ./internal...
-$ go tool cover -func=coverage.out
+go test -coverprofile=coverage.out ./internal...
+go tool cover -func=coverage.out
 ```
 
 ## Запуск автотестов 1
@@ -84,3 +92,9 @@ $ go tool cover -func=coverage.out
 При мёрже ветки с инкрементом в основную ветку `main` будут запускаться все автотесты.
 
 Подробнее про локальный и автоматический запуск читайте в [README автотестов](https://github.com/Yandex-Practicum/go-autotests).
+
+## Swagger
+
+```shell
+swag init --dir ./internal/handlers
+```

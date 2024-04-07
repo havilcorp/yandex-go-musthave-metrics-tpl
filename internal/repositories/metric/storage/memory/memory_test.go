@@ -64,6 +64,36 @@ func BenchmarkAddCounter(b *testing.B) {
 	}
 }
 
+func ExampleMemStorage_AddGauge() {
+	store := NewMemStorage()
+	store.AddGauge(context.Background(), "KEY", 1.1)
+}
+
+func ExampleMemStorage_AddCounter() {
+	store := NewMemStorage()
+	store.AddCounter(context.Background(), "KEY", 1)
+}
+
+func ExampleMemStorage_AddGaugeBulk() {
+	store := NewMemStorage()
+	list := make([]domain.Gauge, 1)
+	list = append(list, domain.Gauge{
+		Key:   "Alloc",
+		Value: 100.123,
+	})
+	store.AddGaugeBulk(context.Background(), list)
+}
+
+func ExampleMemStorage_AddCounterBulk() {
+	store := NewMemStorage()
+	list := make([]domain.Counter, 1)
+	list = append(list, domain.Counter{
+		Key:   "Counter",
+		Value: 100,
+	})
+	store.AddCounterBulk(context.Background(), list)
+}
+
 func TestAddGauge(t *testing.T) {
 	tests := []struct {
 		name string
