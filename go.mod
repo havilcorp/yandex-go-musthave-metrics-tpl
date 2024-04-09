@@ -2,8 +2,6 @@ module github.com/havilcorp/yandex-go-musthave-metrics-tpl
 
 go 1.21
 
-toolchain go1.22.1
-
 require (
 	github.com/go-resty/resty/v2 v2.10.0
 	github.com/jackc/pgx/v5 v5.5.2

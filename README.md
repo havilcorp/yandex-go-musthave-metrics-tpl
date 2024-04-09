@@ -7,6 +7,10 @@
 1. Склонируйте репозиторий в любую подходящую директорию на вашем компьютере.
 2. В корне репозитория выполните команду `go mod init <name>` (где `<name>` — адрес вашего репозитория на GitHub без префикса `https://`) для создания модуля.
 
+```shell
+postgres://postgres:password@localhost:5433/postgres?sslmode=disable
+```
+
 ## GoDoc
 
 ```shell

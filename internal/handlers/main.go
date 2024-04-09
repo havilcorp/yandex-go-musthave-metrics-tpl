@@ -28,7 +28,6 @@ func NewMainHandler(main IMain) *MainHandler {
 // Register регистрация роутов
 func (h *MainHandler) Register(router *chi.Mux) {
 	router.Get("/", h.MainPageHandler)
-	// router.Get("/swagger*", httpSwagger.Handler())
 }
 
 // MainPageHandler godoc

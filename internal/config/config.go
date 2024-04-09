@@ -98,8 +98,6 @@ func (c *Config) WriteAgentConfig() error {
 	return nil
 }
 
-// postgres://postgres:password@localhost:5433/postgres?sslmode=disable
-
 // WriteAgentConfig чтение настроек сервера, env перекрывают флаги
 //
 // Флаги

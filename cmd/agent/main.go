@@ -3,6 +3,7 @@ package main
 
 import (
 	"errors"
+	"log"
 	"os"
 	"os/signal"
 	"runtime"
@@ -35,11 +36,10 @@ func workerSendeRequest(jobs <-chan metric.Metric, wg *sync.WaitGroup) {
 
 // main входная точка запуска агента
 func main() {
-	// conf, err := config.ConfigFactory("agent")
 	conf := config.NewConfig()
 	err := conf.WriteAgentConfig()
 	if err != nil {
-		logrus.Error(err)
+		log.Fatal(err)
 		return
 	}
 	logrus.Info(conf)
@@ -90,7 +90,6 @@ func main() {
 	<-terminateSignals
 	timePoolTracker.Stop()
 	timeReportTracker.Stop()
-	chDone <- struct{}{}
 	close(jobs)
 	wg.Wait()
 	logrus.Info("Агент остановлен")

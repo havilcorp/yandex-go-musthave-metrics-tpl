@@ -11,49 +11,6 @@ import (
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
 )
 
-// func SetupTestDatabase() (testcontainers.Container, *sql.DB) {
-// 	containerReq := testcontainers.ContainerRequest{
-// 		Image:        "postgres:latest",
-// 		ExposedPorts: []string{"5434/tcp"},
-// 		WaitingFor:   wait.ForListeningPort("5434/tcp"),
-// 		Env: map[string]string{
-// 			"POSTGRES_DB":       "testdb",
-// 			"POSTGRES_PASSWORD": "postgres",
-// 			"POSTGRES_USER":     "postgres",
-// 		},
-// 	}
-// 	dbContainer, _ := testcontainers.GenericContainer(
-// 		context.Background(),
-// 		testcontainers.GenericContainerRequest{
-// 			ContainerRequest: containerReq,
-// 			Started:          true,
-// 		})
-
-// 	host, _ := dbContainer.Host(context.Background())
-// 	port, _ := dbContainer.MappedPort(context.Background(), "5434")
-// 	dbURI := fmt.Sprintf("postgres://postgres:postgres@%v:%v/postgres", host, port.Port())
-
-// 	db, err := sql.Open("pgx", dbURI)
-// 	if err != nil {
-// 		logrus.Errorf("pgx init => %v", err)
-// 		return nil, nil
-// 	}
-// 	defer db.Close()
-
-// 	return dbContainer, db
-// }
-
-// func TestPsqlStorage_AddGauge(t *testing.T) {
-// 	dbContainer, db := SetupTestDatabase()
-// 	defer dbContainer.Terminate(context.Background())
-
-// 	conf := config.NewConfig()
-// 	dbStore, err := NewPsqlStorage(conf, db)
-// 	if err != nil {
-// 		return
-// 	}
-// }
-
 func TestPsqlStorage_AddGauge(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	if err != nil {

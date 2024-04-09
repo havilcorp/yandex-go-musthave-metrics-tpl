@@ -15,7 +15,6 @@ func NewPPROFHandler() *PPROFHandler {
 
 // Register регистрация роутов
 func (h *PPROFHandler) Register(router *chi.Mux) {
-	// router.HandleFunc("/pprof/*", pprof.Index)
 	router.HandleFunc("/debug/pprof/profile", pprof.Profile)
 	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
 }

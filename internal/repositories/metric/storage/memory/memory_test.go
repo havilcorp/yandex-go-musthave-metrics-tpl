@@ -41,9 +41,6 @@ func BenchmarkAddGauge(b *testing.B) {
 	b.ReportAllocs()
 	store := NewMemStorage()
 	ctx := context.Background()
-	// b.ResetTimer()
-	// b.StopTimer()
-	// b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		key := randSeq(5)
 		val := rand.Float64()
@@ -56,10 +53,8 @@ func BenchmarkAddCounter(b *testing.B) {
 	store := NewMemStorage()
 	ctx := context.Background()
 	for i := 0; i < b.N; i++ {
-		// b.StopTimer()
 		key := randSeq(5)
 		val := rand.Int63()
-		// b.StartTimer()
 		store.AddCounter(ctx, key, val)
 	}
 }

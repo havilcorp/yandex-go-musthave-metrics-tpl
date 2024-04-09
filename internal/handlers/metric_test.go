@@ -149,13 +149,6 @@ func TestMetricHandler_UpdateHandler(t *testing.T) {
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer res.Body.Close()
-			// data, err := io.ReadAll(res.Body)
-			// if err != nil {
-			// 	t.Errorf("expected error to be nil got %v", err)
-			// }
-			// if string(data) == "" {
-			// 	t.Errorf("expected ABC got %v", string(data))
-			// }
 		})
 	}
 }
@@ -204,13 +197,6 @@ func TestMetricHandler_UpdateCounterHandler(t *testing.T) {
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer res.Body.Close()
-			// data, err := io.ReadAll(res.Body)
-			// if err != nil {
-			// 	t.Errorf("expected error to be nil got %v", err)
-			// }
-			// if string(data) == "" {
-			// 	t.Errorf("expected ABC got %v", string(data))
-			// }
 		})
 	}
 }
@@ -259,13 +245,6 @@ func TestMetricHandler_UpdateGaugeHandler(t *testing.T) {
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer res.Body.Close()
-			// data, err := io.ReadAll(res.Body)
-			// if err != nil {
-			// 	t.Errorf("expected error to be nil got %v", err)
-			// }
-			// if string(data) == "" {
-			// 	t.Errorf("expected ABC got %v", string(data))
-			// }
 		})
 	}
 }
@@ -306,13 +285,6 @@ func TestMetricHandler_BadRequestHandler(t *testing.T) {
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer res.Body.Close()
-			// data, err := io.ReadAll(res.Body)
-			// if err != nil {
-			// 	t.Errorf("expected error to be nil got %v", err)
-			// }
-			// if string(data) == "" {
-			// 	t.Errorf("expected ABC got %v", string(data))
-			// }
 		})
 	}
 }
@@ -373,15 +345,6 @@ func TestMetricHandler_GetMetricHandler(t *testing.T) {
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer res.Body.Close()
-			// data, err := io.ReadAll(res.Body)
-			// if res.StatusCode == 200 {
-			// 	if err != nil {
-			// 		t.Errorf("expected error to be nil got %v", err)
-			// 	}
-			// 	if string(data) == "" {
-			// 		t.Errorf("expected ABC got %v", string(data))
-			// 	}
-			// }
 		})
 	}
 }
@@ -417,13 +380,6 @@ func TestMetricHandler_GetCounterMetricHandler(t *testing.T) {
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer res.Body.Close()
-			// data, err := io.ReadAll(res.Body)
-			// if err != nil {
-			// 	t.Errorf("expected error to be nil got %v", err)
-			// }
-			// if string(data) == "" {
-			// 	t.Errorf("expected ABC got %v", string(data))
-			// }
 		})
 	}
 }
@@ -459,13 +415,6 @@ func TestMetricHandler_GetGaugeMetricHandler(t *testing.T) {
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer res.Body.Close()
-			// data, err := io.ReadAll(res.Body)
-			// if err != nil {
-			// 	t.Errorf("expected error to be nil got %v", err)
-			// }
-			// if string(data) == "" {
-			// 	t.Errorf("expected ABC got %v", string(data))
-			// }
 		})
 	}
 }

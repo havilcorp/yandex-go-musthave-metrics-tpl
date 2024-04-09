@@ -67,8 +67,6 @@ func main() {
 		return
 	}
 
-	// metricFactory.AddCounter()
-
 	r := chi.NewRouter()
 	r.Use(middleware.LogMiddleware)
 	r.Use(middleware.GzipMiddleware)
