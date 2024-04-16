@@ -7,6 +7,18 @@
 1. Склонируйте репозиторий в любую подходящую директорию на вашем компьютере.
 2. В корне репозитория выполните команду `go mod init <name>` (где `<name>` — адрес вашего репозитория на GitHub без префикса `https://`) для создания модуля.
 
+```shell
+postgres://postgres:password@localhost:5433/postgres?sslmode=disable
+```
+
+## GoDoc
+
+```shell
+godoc -http=:8080 -play
+```
+
+http://localhost:8080/pkg/github.com/havilcorp/yandex-go-musthave-metrics-tpl/?m=all
+
 ## Обновление шаблона
 
 Чтобы иметь возможность получать обновления автотестов и других частей шаблона, выполните команду:
@@ -59,13 +71,34 @@ git fetch template && git checkout template/main .github
 
 17. ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8080 -file-storage-path=/tmp/metrics-db.json -database-dsn='postgres://postgres:password@localhost:5433/postgres?sslmode=disable' -key='test123' -test.run=^TestIteration14$
 
+## mockery
+
+```shell
+$ docker run -v "$PWD":/src -w /src vektra/mockery --all
+```
+
+## Покрытие
+
+```shell
+go test -coverprofile=coverage.out ./internal...
+go tool cover -func=coverage.out
+```
+
 ## Запуск автотестов 1
 
+```shell
 /Users/kotvkompe/Desktop/YP/yandex-go-musthave-metrics-tpl
 ./metricstest-darwin-arm64 -test.v -test.run=^TestIteration7$ -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -server-port=8081
+```
 
 Для успешного запуска автотестов называйте ветки `iter<number>`, где `<number>` — порядковый номер инкремента. Например, в ветке с названием `iter4` запустятся автотесты для инкрементов с первого по четвёртый.
 
 При мёрже ветки с инкрементом в основную ветку `main` будут запускаться все автотесты.
 
 Подробнее про локальный и автоматический запуск читайте в [README автотестов](https://github.com/Yandex-Practicum/go-autotests).
+
+## Swagger
+
+```shell
+swag init --dir ./internal/handlers
+```

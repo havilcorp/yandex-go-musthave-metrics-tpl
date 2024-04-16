@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/models"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
 )
@@ -47,6 +47,11 @@ func (m *Metric) String() string {
 	return out
 }
 
+// WriteGopsutil получение дополнительных метрик
+//
+//   - TotalMemory
+//   - FreeMemory
+//   - CPUutilization
 func (m *Metric) WriteGopsutil() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -62,6 +67,37 @@ func (m *Metric) WriteGopsutil() {
 	}
 }
 
+// WriteMain получение основных метрик
+//
+//   - Alloc
+//   - BuckHashSys
+//   - Frees
+//   - GCCPUFraction
+//   - GCSys
+//   - HeapAlloc
+//   - HeapIdle
+//   - HeapInuse
+//   - HeapObjects
+//   - HeapReleased
+//   - HeapSys
+//   - LastGC
+//   - Lookups
+//   - MCacheInuse
+//   - MCacheSys
+//   - MSpanInuse
+//   - MSpanSys
+//   - Mallocs
+//   - NextGC
+//   - NumForcedGC
+//   - NumGC
+//   - OtherSys
+//   - PauseTotalNs
+//   - StackInuse
+//   - StackSys
+//   - Sys
+//   - TotalAlloc
+//   - RandomValue
+//   - PollCount
 func (m *Metric) WriteMain() {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -98,17 +134,18 @@ func (m *Metric) WriteMain() {
 	m.delta["PollCount"] = int64(1)
 }
 
+// Send отправка метрик на сервер
 func (m *Metric) Send() error {
 	client := resty.New()
 	url := fmt.Sprintf("http://%s/updates", m.config.ServerAddress)
 	buf := bytes.NewBuffer(nil)
 	zb := gzip.NewWriter(buf)
-	metrics := make([]models.MetricsRequest, 0)
+	metrics := make([]domain.MetricRequest, 0)
 	for key, value := range m.value {
-		metrics = append(metrics, models.MetricsRequest{ID: key, MType: "gauge", Value: &value})
+		metrics = append(metrics, domain.MetricRequest{ID: key, MType: "gauge", Value: &value})
 	}
 	for key, delta := range m.delta {
-		metrics = append(metrics, models.MetricsRequest{ID: key, MType: "counter", Delta: &delta})
+		metrics = append(metrics, domain.MetricRequest{ID: key, MType: "counter", Delta: &delta})
 	}
 	jsonMetric, err := json.Marshal(metrics)
 	if err != nil {

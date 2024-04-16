@@ -1,3 +1,4 @@
+// Конфигурации агента и сервера
 package config
 
 import (
@@ -39,8 +40,22 @@ func (c *Config) String() string {
 	return out
 }
 
+// WriteAgentConfig чтение настроек агента, env перекрывают флаги
+//
+// Флаги
+//   - -a - адрес и порт сервера
+//   - -r - интервал отправки метрик на сервер
+//   - -p - интервал сбора метрик
+//   - -k - ключ sha256
+//   - -l - лимит запросов
+//
+// Env
+//   - ADDRESS - адрес и порт сервера
+//   - REPORT_INTERVAL - интервал отправки метрик на сервер
+//   - POLL_INTERVAL - интервал сбора метрик
+//   - KEY - ключ sha256
+//   - RATE_LIMIT - лимит запросов
 func (c *Config) WriteAgentConfig() error {
-
 	flag.StringVar(&c.ServerAddress, "a", "localhost:8080", "address and port to run server")
 	flag.IntVar(&c.ReportInterval, "r", 10, "report interval time in sec")
 	flag.IntVar(&c.PollInterval, "p", 2, "poll interval time in sec")
@@ -83,7 +98,23 @@ func (c *Config) WriteAgentConfig() error {
 	return nil
 }
 
-// postgres://postgres:password@localhost:5433/postgres?sslmode=disable
+// WriteAgentConfig чтение настроек сервера, env перекрывают флаги
+//
+// Флаги
+//   - -a - адрес и порт сервера
+//   - -i - интевал сохранения метрик в файл
+//   - -f - файл для созранения метрик. По деволту: /tmp/metrics-db.json
+//   - -r - загружать ли при запуске метрики из файла
+//   - -d - строка подключения к базе данных
+//   - -r - ключ sha256
+//
+// Env
+//   - ADDRESS - адрес и порт сервера
+//   - STORE_INTERVAL - интевал сохранения метрик в файл
+//   - FILE_STORAGE_PATH - файл для созранения метрик. По деволту: /tmp/metrics-db.json
+//   - RESTORE - загружать ли при запуске метрики из файла
+//   - DATABASE_DSN - строка подключения к базе данных
+//   - KEY - ключ sha256
 func (c *Config) WriteServerConfig() error {
 	flag.StringVar(&c.ServerAddress, "a", "localhost:8080", "address and port to run server")
 	flag.IntVar(&c.StoreInterval, "i", 300, "store save interval time in sec")
