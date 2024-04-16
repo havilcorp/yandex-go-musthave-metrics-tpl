@@ -1,3 +1,4 @@
+// Package psql репозиторий для работы с метриками в базе данных
 package psql
 
 import (
@@ -33,8 +34,12 @@ func (store *PsqlStorage) Bootstrap(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("bootstrap => %w", err)
 	}
-	defer tx.Rollback()
-	tx.ExecContext(ctx, `
+	defer func() {
+		if err = tx.Rollback(); err != nil {
+			logrus.Error(err)
+		}
+	}()
+	_, err = tx.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS gauge (
 			id SERIAL PRIMARY KEY,
 			key varchar(100) UNIQUE NOT NULL, 
@@ -42,7 +47,10 @@ func (store *PsqlStorage) Bootstrap(ctx context.Context) error {
 			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);
 	`)
-	tx.ExecContext(ctx, `
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS counter (
 			id SERIAL PRIMARY KEY,
 			key varchar(100) UNIQUE NOT NULL, 
@@ -50,6 +58,9 @@ func (store *PsqlStorage) Bootstrap(ctx context.Context) error {
 			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);
 	`)
+	if err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
@@ -87,7 +98,11 @@ func (store *PsqlStorage) AddGaugeBulk(ctx context.Context, list []domain.Gauge)
 	if err != nil {
 		return fmt.Errorf("addGaugeBulk => %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err = tx.Rollback(); err != nil {
+			logrus.Error(err)
+		}
+	}()
 	for _, model := range list {
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO gauge (key, value)
@@ -111,7 +126,11 @@ func (store *PsqlStorage) AddCounterBulk(ctx context.Context, list []domain.Coun
 	if err != nil {
 		return fmt.Errorf("addCounterBulk => %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err = tx.Rollback(); err != nil {
+			logrus.Error(err)
+		}
+	}()
 	for _, model := range list {
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO counter (key, value)
@@ -203,7 +222,11 @@ func (store *PsqlStorage) GetAllGauge(ctx context.Context) (map[string]float64, 
 		logrus.Error(err)
 		return gauge, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
 	for rows.Next() {
 		var key string
 		var val float64
@@ -238,7 +261,11 @@ func (store *PsqlStorage) GetAllCounters(ctx context.Context) (map[string]int64,
 		logrus.Error(err)
 		return counter, err
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
 	for rows.Next() {
 		var key string
 		var val int64

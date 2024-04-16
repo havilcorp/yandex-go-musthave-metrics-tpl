@@ -28,8 +28,8 @@ func TestMetricHandler_UpdateBulkHandler(t *testing.T) {
 	value := float64(1.1)
 
 	type args struct {
-		statusCode int
 		data       []domain.MetricRequest
+		statusCode int
 	}
 	tests := []struct {
 		name string
@@ -78,7 +78,11 @@ func TestMetricHandler_UpdateBulkHandler(t *testing.T) {
 			h.UpdateBulkHandler(rw, r)
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					logrus.Error(err)
+				}
+			}()
 		})
 	}
 }
@@ -95,8 +99,8 @@ func TestMetricHandler_UpdateHandler(t *testing.T) {
 	value := float64(1.1)
 
 	type args struct {
-		statusCode int
 		data       domain.MetricRequest
+		statusCode int
 	}
 	tests := []struct {
 		name string
@@ -148,7 +152,11 @@ func TestMetricHandler_UpdateHandler(t *testing.T) {
 			h.UpdateHandler(rw, r)
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					logrus.Error(err)
+				}
+			}()
 		})
 	}
 }
@@ -159,9 +167,9 @@ func TestMetricHandler_UpdateCounterHandler(t *testing.T) {
 	metricHandler.On("AddCounter", mock.Anything, "COUNTER", int64(1)).Return(nil)
 
 	type args struct {
-		statusCode int
 		key        string
 		value      string
+		statusCode int
 	}
 	tests := []struct {
 		name string
@@ -196,7 +204,11 @@ func TestMetricHandler_UpdateCounterHandler(t *testing.T) {
 			h.UpdateCounterHandler(rw, r)
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					logrus.Error(err)
+				}
+			}()
 		})
 	}
 }
@@ -207,9 +219,9 @@ func TestMetricHandler_UpdateGaugeHandler(t *testing.T) {
 	metricHandler.On("AddGauge", mock.Anything, "GAUGE", float64(1.1)).Return(nil)
 
 	type args struct {
-		statusCode int
 		key        string
 		value      string
+		statusCode int
 	}
 	tests := []struct {
 		name string
@@ -244,7 +256,11 @@ func TestMetricHandler_UpdateGaugeHandler(t *testing.T) {
 			h.UpdateGaugeHandler(rw, r)
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					logrus.Error(err)
+				}
+			}()
 		})
 	}
 }
@@ -252,10 +268,10 @@ func TestMetricHandler_UpdateGaugeHandler(t *testing.T) {
 func TestMetricHandler_BadRequestHandler(t *testing.T) {
 	metricHandler := mocks.NewIMetric(t)
 	type args struct {
-		statusCode int
 		all        string
 		key        string
 		value      string
+		statusCode int
 	}
 	tests := []struct {
 		name string
@@ -284,7 +300,11 @@ func TestMetricHandler_BadRequestHandler(t *testing.T) {
 			h.BadRequestHandler(rw, r)
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					logrus.Error(err)
+				}
+			}()
 		})
 	}
 }
@@ -294,8 +314,8 @@ func TestMetricHandler_GetMetricHandler(t *testing.T) {
 	metricHandler.On("GetCounter", mock.Anything, "COUNTER").Return(int64(1), nil)
 	metricHandler.On("GetGauge", mock.Anything, "GAUGE").Return(float64(1.1), nil)
 	type args struct {
-		statusCode int
 		data       domain.MetricRequest
+		statusCode int
 	}
 	tests := []struct {
 		name string
@@ -344,7 +364,11 @@ func TestMetricHandler_GetMetricHandler(t *testing.T) {
 			h.GetMetricHandler(rw, r)
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					logrus.Error(err)
+				}
+			}()
 		})
 	}
 }
@@ -353,8 +377,8 @@ func TestMetricHandler_GetCounterMetricHandler(t *testing.T) {
 	metricHandler := mocks.NewIMetric(t)
 	metricHandler.On("GetCounter", mock.Anything, "COUNTER").Return(int64(1), nil)
 	type args struct {
-		statusCode int
 		name       string
+		statusCode int
 	}
 	tests := []struct {
 		name string
@@ -379,7 +403,11 @@ func TestMetricHandler_GetCounterMetricHandler(t *testing.T) {
 			h.GetCounterMetricHandler(rw, r)
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					logrus.Error(err)
+				}
+			}()
 		})
 	}
 }
@@ -388,8 +416,8 @@ func TestMetricHandler_GetGaugeMetricHandler(t *testing.T) {
 	metricHandler := mocks.NewIMetric(t)
 	metricHandler.On("GetGauge", mock.Anything, "GAUGE").Return(float64(1.1), nil)
 	type args struct {
-		statusCode int
 		name       string
+		statusCode int
 	}
 	tests := []struct {
 		name string
@@ -414,7 +442,11 @@ func TestMetricHandler_GetGaugeMetricHandler(t *testing.T) {
 			h.GetGaugeMetricHandler(rw, r)
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					logrus.Error(err)
+				}
+			}()
 		})
 	}
 }
@@ -433,4 +465,13 @@ func Example() {
 	}
 	r := chi.NewRouter()
 	NewMetricHandler(metricFactory).Register(r)
+}
+
+func TestMetricHandler_Register(t *testing.T) {
+	r := chi.NewRouter()
+	metricHandler := mocks.NewIMetric(t)
+	t.Run("Register", func(t *testing.T) {
+		h := NewMetricHandler(metricHandler)
+		h.Register(r)
+	})
 }

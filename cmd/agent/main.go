@@ -1,4 +1,4 @@
-// Агент для отправки метрик на сервер
+// Package main агент для отправки метрик на сервер
 package main
 
 import (
@@ -34,6 +34,12 @@ func workerSendeRequest(jobs <-chan metric.Metric, wg *sync.WaitGroup) {
 	}
 }
 
+var (
+	buildVersion string = "N/A"
+	buildDate    string = "N/A"
+	buildCommit  string = "N/A"
+)
+
 // main входная точка запуска агента
 func main() {
 	conf := config.NewConfig()
@@ -42,7 +48,10 @@ func main() {
 		log.Fatal(err)
 		return
 	}
-	logrus.Info(conf)
+
+	logrus.Infof("Build version: %s\n", buildVersion)
+	logrus.Infof("Build date: %s\n", buildDate)
+	logrus.Infof("Build commit: %s\n", buildCommit)
 
 	numJobs := runtime.GOMAXPROCS(0)
 	numPool := conf.RateLimit

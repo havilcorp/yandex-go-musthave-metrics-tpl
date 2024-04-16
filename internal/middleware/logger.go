@@ -1,3 +1,4 @@
+// Package middleware мидлвар для логирования запросов
 package middleware
 
 import (

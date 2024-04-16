@@ -1,3 +1,4 @@
+// Package domain глобальный файл ошибок
 package domain
 
 import "errors"

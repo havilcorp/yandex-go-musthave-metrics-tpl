@@ -70,3 +70,31 @@ func TestFileStorage_AddCounterBulk(t *testing.T) {
 		require.Equal(t, val, int64(1))
 	})
 }
+
+func TestFileStorage_SaveToFile_LoadFromFile(t *testing.T) {
+	conf := config.Config{
+		StoreInterval:   999,
+		IsRestore:       false,
+		FileStoragePath: "/tmp/test-metrics-db.json",
+	}
+	store, err := NewFileStorage(&conf)
+	if err != nil {
+		t.Errorf("NewFileStorage %v", err)
+	}
+	err = store.AddGauge(context.Background(), "GAUGE1", 1.1)
+	if err != nil {
+		t.Errorf("AddGauge %v", err)
+	}
+	err = store.AddCounter(context.Background(), "COUNTER1", 1)
+	if err != nil {
+		t.Errorf("AddCounter %v", err)
+	}
+	err = store.SaveToFile(context.Background())
+	if err != nil {
+		t.Errorf("SaveToFile %v", err)
+	}
+	err = store.LoadFromFile(context.Background())
+	if err != nil {
+		t.Errorf("SaveToFile %v", err)
+	}
+}

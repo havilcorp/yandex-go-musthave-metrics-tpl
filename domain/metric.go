@@ -1,3 +1,4 @@
+// Package domain модели метрик
 package domain
 
 type Metric struct {

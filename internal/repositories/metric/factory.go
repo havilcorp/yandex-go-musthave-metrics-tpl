@@ -1,4 +1,4 @@
-// Фабрики хранилища
+// Package metric фабрики хранилища
 package metric
 
 import (

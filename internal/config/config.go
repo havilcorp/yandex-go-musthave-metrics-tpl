@@ -1,43 +1,26 @@
-// Конфигурации агента и сервера
+// Package config конфигурации агента и сервера
 package config
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"strconv"
 )
 
 type Config struct {
 	ServerAddress   string
+	Key             string
+	FileStoragePath string
+	DBConnect       string
 	ReportInterval  int
 	PollInterval    int
 	StoreInterval   int
-	FileStoragePath string
 	IsRestore       bool
-	DBConnect       string
-	Key             string
 	RateLimit       int
 }
 
 func NewConfig() *Config {
 	return &Config{}
-}
-
-func (c *Config) String() string {
-	out := ""
-	out += "\n******* CONFIG *******\n"
-	out += fmt.Sprintf("* ServerAddress: %s\n", c.ServerAddress)
-	out += fmt.Sprintf("* ReportInterval: %d\n", c.ReportInterval)
-	out += fmt.Sprintf("* PollInterval: %d\n", c.PollInterval)
-	out += fmt.Sprintf("* StoreInterval: %d\n", c.StoreInterval)
-	out += fmt.Sprintf("* FileStoragePath: %s\n", c.FileStoragePath)
-	out += fmt.Sprintf("* IsRestore: %t\n", c.IsRestore)
-	out += fmt.Sprintf("* DBConnect: %s\n", c.DBConnect)
-	out += fmt.Sprintf("* Key: %s\n", c.Key)
-	out += fmt.Sprintf("* RateLimit: %d", c.RateLimit)
-	out += "\n**********************\n"
-	return out
 }
 
 // WriteAgentConfig чтение настроек агента, env перекрывают флаги
@@ -98,7 +81,7 @@ func (c *Config) WriteAgentConfig() error {
 	return nil
 }
 
-// WriteAgentConfig чтение настроек сервера, env перекрывают флаги
+// WriteServerConfig чтение настроек сервера, env перекрывают флаги
 //
 // Флаги
 //   - -a - адрес и порт сервера

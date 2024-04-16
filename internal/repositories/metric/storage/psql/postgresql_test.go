@@ -9,6 +9,8 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/sirupsen/logrus"
 )
 
 func TestPsqlStorage_AddGauge(t *testing.T) {
@@ -16,7 +18,11 @@ func TestPsqlStorage_AddGauge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err = db.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
 
 	mock.ExpectExec(regexp.QuoteMeta(`
 		INSERT INTO gauge (key, value)
@@ -44,7 +50,11 @@ func TestPsqlStorage_AddCounter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err = db.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
 
 	mock.ExpectExec(regexp.QuoteMeta(`
 		INSERT INTO counter (key, value)
@@ -72,7 +82,11 @@ func TestPsqlStorage_AddGaugeBulk(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err = db.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
 
 	mock.ExpectBegin()
 
@@ -117,7 +131,11 @@ func TestPsqlStorage_AddCounterBulk(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err = db.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
 
 	mock.ExpectBegin()
 
@@ -162,7 +180,11 @@ func TestPsqlStorage_GetGauge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT value FROM gauge WHERE key=$1`)).
 		WithArgs("GAUGE").
 		WillReturnRows(sqlmock.NewRows([]string{"value"}).AddRow(1.1))
@@ -185,7 +207,11 @@ func TestPsqlStorage_GetCounter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT value FROM counter WHERE key=$1`)).
 		WithArgs("COUNTER").
 		WillReturnRows(sqlmock.NewRows([]string{"value"}).AddRow(1))
@@ -208,7 +234,11 @@ func TestPsqlStorage_GetAllGauge(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT key, value FROM gauge`)).
 		WillReturnRows(sqlmock.NewRows([]string{"key", "value"}).
 			AddRows([]driver.Value{"GAUGE1", 1.1}).
@@ -229,7 +259,11 @@ func TestPsqlStorage_GetAllCounters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT key, value FROM counter`)).
 		WillReturnRows(sqlmock.NewRows([]string{"key", "value"}).
 			AddRows([]driver.Value{"COUNTER1", 1}).
@@ -239,6 +273,43 @@ func TestPsqlStorage_GetAllCounters(t *testing.T) {
 	}
 	t.Run("GetAllCounters", func(t *testing.T) {
 		_, err := psqlStorage.GetAllCounters(context.Background())
+		if err != nil {
+			t.Error(err)
+		}
+	})
+}
+
+func TestPsqlStorage_Bootstrap(t *testing.T) {
+	conf := config.NewConfig()
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			logrus.Error(err)
+		}
+	}()
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta(`
+		CREATE TABLE IF NOT EXISTS gauge (
+			id SERIAL PRIMARY KEY,
+			key varchar(100) UNIQUE NOT NULL, 
+			value DOUBLE PRECISION NOT NULL,
+			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+	`)).WillReturnResult(driver.ResultNoRows)
+	mock.ExpectExec(regexp.QuoteMeta(`
+		CREATE TABLE IF NOT EXISTS counter (
+			id SERIAL PRIMARY KEY,
+			key varchar(100) UNIQUE NOT NULL, 
+			value bigint NOT NULL,
+			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+	`)).WillReturnResult(driver.ResultNoRows)
+	mock.ExpectCommit()
+	t.Run("Bootstrap", func(t *testing.T) {
+		_, err := NewPsqlStorage(conf, db)
 		if err != nil {
 			t.Error(err)
 		}
