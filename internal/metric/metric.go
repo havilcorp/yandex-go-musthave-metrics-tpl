@@ -1,3 +1,4 @@
+// Package metric вспомогательный пакет для работы агента
 package metric
 
 import (

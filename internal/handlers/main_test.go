@@ -6,9 +6,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-chi/chi"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/mocks"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	_ "github.com/swaggo/http-swagger/example/go-chi/docs"
 )
 
 func TestMainHandler_MainPageHandler(t *testing.T) {
@@ -39,7 +42,11 @@ func TestMainHandler_MainPageHandler(t *testing.T) {
 			h.MainPageHandler(rw, r)
 			res := rw.Result()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
-			defer res.Body.Close()
+			defer func() {
+				if err := res.Body.Close(); err != nil {
+					logrus.Error(err)
+				}
+			}()
 			data, err := io.ReadAll(res.Body)
 			if err != nil {
 				t.Errorf("expected error to be nil got %v", err)
@@ -49,4 +56,13 @@ func TestMainHandler_MainPageHandler(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMainHandler_Register(t *testing.T) {
+	r := chi.NewRouter()
+	mainHandler := mocks.NewIMain(t)
+	t.Run("Register", func(t *testing.T) {
+		h := NewMainHandler(mainHandler)
+		h.Register(r)
+	})
 }

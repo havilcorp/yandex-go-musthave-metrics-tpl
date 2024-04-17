@@ -8,21 +8,22 @@ import (
 	_ "net/http/pprof"
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
 type WantGauge struct {
 	key     string
-	val     float64
 	wantKey string
+	val     float64
 	wantVal float64
 	isError bool
 }
 
 type WantCounter struct {
 	key     string
-	val     int64
 	wantKey string
+	val     int64
 	wantVal int64
 	isError bool
 }
@@ -44,7 +45,10 @@ func BenchmarkAddGauge(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		key := randSeq(5)
 		val := rand.Float64()
-		store.AddGauge(ctx, key, val)
+		err := store.AddGauge(ctx, key, val)
+		if err != nil {
+			logrus.Error(err)
+		}
 	}
 }
 
@@ -55,18 +59,27 @@ func BenchmarkAddCounter(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		key := randSeq(5)
 		val := rand.Int63()
-		store.AddCounter(ctx, key, val)
+		err := store.AddCounter(ctx, key, val)
+		if err != nil {
+			logrus.Error(err)
+		}
 	}
 }
 
 func ExampleMemStorage_AddGauge() {
 	store := NewMemStorage()
-	store.AddGauge(context.Background(), "KEY", 1.1)
+	err := store.AddGauge(context.Background(), "KEY", 1.1)
+	if err != nil {
+		logrus.Error(err)
+	}
 }
 
 func ExampleMemStorage_AddCounter() {
 	store := NewMemStorage()
-	store.AddCounter(context.Background(), "KEY", 1)
+	err := store.AddCounter(context.Background(), "KEY", 1)
+	if err != nil {
+		logrus.Error(err)
+	}
 }
 
 func ExampleMemStorage_AddGaugeBulk() {
@@ -76,7 +89,10 @@ func ExampleMemStorage_AddGaugeBulk() {
 		Key:   "Alloc",
 		Value: 100.123,
 	})
-	store.AddGaugeBulk(context.Background(), list)
+	err := store.AddGaugeBulk(context.Background(), list)
+	if err != nil {
+		logrus.Error(err)
+	}
 }
 
 func ExampleMemStorage_AddCounterBulk() {
@@ -86,7 +102,10 @@ func ExampleMemStorage_AddCounterBulk() {
 		Key:   "Counter",
 		Value: 100,
 	})
-	store.AddCounterBulk(context.Background(), list)
+	err := store.AddCounterBulk(context.Background(), list)
+	if err != nil {
+		logrus.Error(err)
+	}
 }
 
 func TestAddGauge(t *testing.T) {

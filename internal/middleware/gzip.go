@@ -1,3 +1,4 @@
+// Package middleware мидлвар для сжатия и разжатия запросов
 package middleware
 
 import (
@@ -5,6 +6,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 type compressWriter struct {
@@ -75,7 +78,11 @@ func GzipMiddleware(h http.Handler) http.Handler {
 			cw := newCompressWriter(w)
 			ow = cw
 			ow.Header().Set("Content-Encoding", "gzip")
-			defer cw.Close()
+			defer func() {
+				if err := cw.Close(); err != nil {
+					logrus.Error(err)
+				}
+			}()
 		}
 		contentEncoding := r.Header.Get("Content-Encoding")
 		sendsGzip := strings.Contains(contentEncoding, "gzip")
@@ -86,7 +93,11 @@ func GzipMiddleware(h http.Handler) http.Handler {
 				return
 			}
 			r.Body = cr
-			defer cr.Close()
+			defer func() {
+				if err := cr.Close(); err != nil {
+					logrus.Error(err)
+				}
+			}()
 		}
 		h.ServeHTTP(ow, r)
 	})

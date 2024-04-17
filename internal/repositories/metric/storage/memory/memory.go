@@ -1,3 +1,4 @@
+// Package memory репозиторий для работы с метриками в оперативной памяти
 package memory
 
 import (

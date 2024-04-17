@@ -1,3 +1,4 @@
+// Package middleware мидлвар для шиврования и расшифрования запросов
 package middleware
 
 import (

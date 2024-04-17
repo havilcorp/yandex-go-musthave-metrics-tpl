@@ -1,4 +1,4 @@
-// Сервер для принятия и хранения метрик
+// Package main сервер для принятия и хранения метрик
 package main
 
 import (
@@ -22,6 +22,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	buildVersion string = "N/A"
+	buildDate    string = "N/A"
+	buildCommit  string = "N/A"
+)
+
 // main входная точка запуска сервера
 func main() {
 	conf := config.NewConfig()
@@ -30,7 +36,10 @@ func main() {
 		logrus.Error(err)
 		return
 	}
-	logrus.Info(conf)
+
+	logrus.Infof("Build version: %s\n", buildVersion)
+	logrus.Infof("Build date: %s\n", buildDate)
+	logrus.Infof("Build commit: %s\n", buildCommit)
 
 	provider := "memory"
 	var db *sql.DB
@@ -42,7 +51,11 @@ func main() {
 			logrus.Errorf("pgx init => %v", err)
 			return
 		}
-		defer db.Close()
+		defer func() {
+			if err = db.Close(); err != nil {
+				logrus.Error(err)
+			}
+		}()
 		for _, sec := range []int{1, 3, 5} {
 			err = db.PingContext(context.Background())
 			if errors.Is(err, syscall.ECONNREFUSED) {
@@ -85,7 +98,7 @@ func main() {
 
 	go func() {
 		logrus.Infof("Сервер запушен %s", conf.ServerAddress)
-		if err := server.ListenAndServe(); err != nil {
+		if err = server.ListenAndServe(); err != nil {
 			logrus.Error(err)
 		}
 	}()
@@ -94,11 +107,13 @@ func main() {
 		timeTicker = time.NewTicker(time.Second * time.Duration(conf.StoreInterval))
 		go func() {
 			for range timeTicker.C {
-				listGauges, err := metricFactory.GetAllGauge(context.Background())
+				var listGauges map[string]float64
+				listGauges, err = metricFactory.GetAllGauge(context.Background())
 				if err != nil {
 					logrus.Error(err)
 				}
-				listCounters, err := metricFactory.GetAllCounters(context.Background())
+				var listCounters map[string]int64
+				listCounters, err = metricFactory.GetAllCounters(context.Background())
 				if err != nil {
 					logrus.Error(err)
 				}
@@ -106,7 +121,7 @@ func main() {
 					Gauge:   listGauges,
 					Counter: listCounters,
 				}
-				if err := storageRepo.SaveToFile(metric); err != nil {
+				if err = storageRepo.SaveToFile(metric); err != nil {
 					logrus.Error(err)
 				}
 			}
@@ -116,7 +131,7 @@ func main() {
 	terminateSignals := make(chan os.Signal, 1)
 	signal.Notify(terminateSignals, syscall.SIGINT)
 	<-terminateSignals
-	if err := server.Shutdown(context.Background()); err != nil {
+	if err = server.Shutdown(context.Background()); err != nil {
 		logrus.Error(err)
 	}
 	if timeTicker != nil {

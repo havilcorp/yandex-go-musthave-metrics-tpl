@@ -1,4 +1,4 @@
-// Роуты сервера
+// Package handlers роуты сервера
 package handlers
 
 import (

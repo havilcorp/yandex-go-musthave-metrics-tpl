@@ -1,3 +1,4 @@
+// Package file репозиторий для работы с метриками файловой системы
 package file
 
 import (
@@ -125,11 +126,11 @@ func (store *FileStorage) GetAllCounters(ctx context.Context) (map[string]int64,
 func (store *FileStorage) SaveToFile(ctx context.Context) error {
 	listGauges, err := store.GetAllGauge(ctx)
 	if err != nil {
-		return fmt.Errorf("GetAllGauge %v", err)
+		return fmt.Errorf("GetAllGauge %w", err)
 	}
 	listCounters, err := store.GetAllCounters(ctx)
 	if err != nil {
-		return fmt.Errorf("GetAllCounters %v", err)
+		return fmt.Errorf("GetAllCounters %w", err)
 	}
 	modelFileStorage := domain.Metric{
 		Gauge:   listGauges,
@@ -145,7 +146,7 @@ func (store *FileStorage) SaveToFile(ctx context.Context) error {
 	return nil
 }
 
-// SaveToFile загрузка всех метрик из файла
+// LoadFromFile загрузка всех метрик из файла
 func (store *FileStorage) LoadFromFile(ctx context.Context) error {
 	file, err := os.ReadFile(store.Conf.FileStoragePath)
 	if err != nil {

@@ -1,3 +1,4 @@
+// Package repositories репозиторий для проверки статуса подключения к бд
 package repositories
 
 type IDataBase interface {
