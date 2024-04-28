@@ -83,6 +83,9 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.LogMiddleware)
 	r.Use(middleware.GzipMiddleware)
+	if conf.CryptoKey != "" {
+		r.Use(middleware.RsaMiddleware(conf.CryptoKey))
+	}
 	r.Use(middleware.HashSHA256Middleware(conf.Key))
 
 	handlers.NewPPROFHandler().Register(r)
