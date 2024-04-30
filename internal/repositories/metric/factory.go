@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/server"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/repositories/metric/storage/file"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/repositories/metric/storage/memory"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/repositories/metric/storage/psql"
@@ -36,7 +36,7 @@ type Provider interface {
 //		logrus.Error(err)
 //		return
 //	}
-func MetricFactory(provider string, conf *config.Config, db *sql.DB) (Provider, error) {
+func MetricFactory(provider string, conf *server.Config, db *sql.DB) (Provider, error) {
 	switch provider {
 	case "memory":
 		return memory.NewMemStorage(), nil

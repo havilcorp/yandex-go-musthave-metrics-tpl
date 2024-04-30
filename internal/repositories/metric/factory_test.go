@@ -7,13 +7,13 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/server"
 	"github.com/sirupsen/logrus"
 )
 
 func TestMetricFactory(t *testing.T) {
 	t.Run("Test mem storage", func(t *testing.T) {
-		conf := config.NewConfig()
+		conf := server.NewServerConfig()
 		var err error
 		_, err = MetricFactory("memory", conf, nil)
 		if err != nil {

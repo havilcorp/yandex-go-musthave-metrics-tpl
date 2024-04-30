@@ -13,7 +13,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/server"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/middleware"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/repositories"
@@ -30,7 +30,7 @@ var (
 
 // main входная точка запуска сервера
 func main() {
-	conf := config.NewConfig()
+	conf := server.NewServerConfig()
 	err := conf.WriteServerConfig()
 	if err != nil {
 		logrus.Error(err)

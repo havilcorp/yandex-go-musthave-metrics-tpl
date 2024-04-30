@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/agent"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/metric"
 	"github.com/sirupsen/logrus"
 )
@@ -42,7 +42,7 @@ var (
 
 // main входная точка запуска агента
 func main() {
-	conf := config.NewConfig()
+	conf := agent.NewAgentConfig()
 	err := conf.WriteAgentConfig()
 	if err != nil {
 		log.Fatal(err)

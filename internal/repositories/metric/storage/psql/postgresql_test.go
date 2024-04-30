@@ -9,7 +9,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/server"
 	"github.com/sirupsen/logrus"
 )
 
@@ -280,7 +280,7 @@ func TestPsqlStorage_GetAllCounters(t *testing.T) {
 }
 
 func TestPsqlStorage_Bootstrap(t *testing.T) {
-	conf := config.NewConfig()
+	conf := server.NewServerConfig()
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)

@@ -16,7 +16,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/agent"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/cryptorsa"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
@@ -25,12 +25,12 @@ import (
 
 type Metric struct {
 	mutex  *sync.Mutex
-	config *config.Config
+	config *agent.Config
 	value  map[string]float64
 	delta  map[string]int64
 }
 
-func NewMetric(config *config.Config) *Metric {
+func NewMetric(config *agent.Config) *Metric {
 	return &Metric{
 		mutex:  &sync.Mutex{},
 		config: config,

@@ -5,12 +5,12 @@ import (
 	"testing"
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/server"
 	"github.com/stretchr/testify/require"
 )
 
 func TestFileStorage_AddGaugeBulk(t *testing.T) {
-	conf := config.Config{
+	conf := server.Config{
 		StoreInterval: 999,
 		IsRestore:     false,
 	}
@@ -41,7 +41,7 @@ func TestFileStorage_AddGaugeBulk(t *testing.T) {
 }
 
 func TestFileStorage_AddCounterBulk(t *testing.T) {
-	conf := config.Config{
+	conf := server.Config{
 		StoreInterval: 999,
 		IsRestore:     false,
 	}
@@ -72,7 +72,7 @@ func TestFileStorage_AddCounterBulk(t *testing.T) {
 }
 
 func TestFileStorage_SaveToFile_LoadFromFile(t *testing.T) {
-	conf := config.Config{
+	conf := server.Config{
 		StoreInterval:   999,
 		IsRestore:       false,
 		FileStoragePath: "/tmp/test-metrics-db.json",

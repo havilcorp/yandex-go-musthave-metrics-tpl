@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/server"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,7 +17,7 @@ type PsqlStorage struct {
 }
 
 // NewPsqlStorage инициализация хранилища в базе даннных + создание структуры
-func NewPsqlStorage(conf *config.Config, db *sql.DB) (*PsqlStorage, error) {
+func NewPsqlStorage(conf *server.Config, db *sql.DB) (*PsqlStorage, error) {
 	ctx := context.Background()
 	psqlStorage := PsqlStorage{
 		db: db,
