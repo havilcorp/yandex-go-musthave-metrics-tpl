@@ -11,14 +11,14 @@ import (
 )
 
 type Config struct {
-	ServerAddress   string `json:"address"`
-	StoreInterval   int    `json:"store_interval"`
-	FileStoragePath string `json:"store_file"`
-	IsRestore       bool   `json:"restore"`
-	DBConnect       string `json:"database_dsn"`
-	Key             string
-	CryptoKey       string `json:"crypto_key"`
 	Config          string
+	ServerAddress   string `json:"address"`
+	FileStoragePath string `json:"store_file"`
+	DBConnect       string `json:"database_dsn"`
+	Key             string `json:"key"`
+	CryptoKey       string `json:"crypto_key"`
+	IsRestore       bool   `json:"restore"`
+	StoreInterval   int    `json:"store_interval"`
 }
 
 func NewServerConfig() *Config {
@@ -89,6 +89,10 @@ func (c *Config) WriteServerConfig() error {
 		c.CryptoKey = envCryptoKey
 	}
 
+	if envConfig := os.Getenv("CONFIG"); envConfig != "" {
+		c.Config = envConfig
+	}
+
 	if c.Config != "" {
 		data, err := os.ReadFile(c.Config)
 		if err != nil {
@@ -102,6 +106,7 @@ func (c *Config) WriteServerConfig() error {
 			IsRestore:       true,
 			DBConnect:       "",
 			CryptoKey:       "",
+			Key:             "",
 		}
 		err = json.Unmarshal(data, &conf)
 		if err != nil {
@@ -121,6 +126,9 @@ func (c *Config) WriteServerConfig() error {
 		}
 		if c.DBConnect == "" {
 			c.DBConnect = conf.DBConnect
+		}
+		if c.Key == "" {
+			c.Key = conf.Key
 		}
 		if c.CryptoKey == "" {
 			c.CryptoKey = conf.CryptoKey

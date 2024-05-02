@@ -13,6 +13,7 @@ func TestConfig_WriteServerConfig(t *testing.T) {
 		t.Setenv("DATABASE_DSN", "DATABASE_DSN")
 		t.Setenv("KEY", "KEY")
 		t.Setenv("CRYPTO_KEY", "CRYPTO_KEY")
+		t.Setenv("CONFIG", "../../../config/server.json")
 		if err := conf.WriteServerConfig(); (err != nil) != false {
 			t.Errorf("Config.WriteServerConfig() error = %v, wantErr %v", err, false)
 		}

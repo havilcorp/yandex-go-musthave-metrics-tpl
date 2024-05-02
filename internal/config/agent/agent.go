@@ -11,13 +11,13 @@ import (
 )
 
 type Config struct {
+	Config         string
 	ServerAddress  string `json:"address"`
+	CryptoKey      string `json:"crypto_key"`
+	Key            string `json:"key"`
 	ReportInterval int    `json:"report_interval"`
 	PollInterval   int    `json:"poll_interval"`
-	Key            string
-	RateLimit      int
-	CryptoKey      string `json:"crypto_key"`
-	Config         string
+	RateLimit      int    `json:"rate_limit"`
 }
 
 func NewAgentConfig() *Config {
@@ -89,6 +89,10 @@ func (c *Config) WriteAgentConfig() error {
 		c.CryptoKey = envCryptoKey
 	}
 
+	if envConfig := os.Getenv("CONFIG"); envConfig != "" {
+		c.Config = envConfig
+	}
+
 	if c.Config != "" {
 		data, err := os.ReadFile(c.Config)
 		if err != nil {
@@ -99,7 +103,9 @@ func (c *Config) WriteAgentConfig() error {
 			ServerAddress:  "localhost:8080",
 			ReportInterval: 10,
 			PollInterval:   2,
+			RateLimit:      2,
 			CryptoKey:      "",
+			Key:            "",
 		}
 		err = json.Unmarshal(data, &conf)
 		if err != nil {
@@ -108,11 +114,17 @@ func (c *Config) WriteAgentConfig() error {
 		if c.ServerAddress == "localhost:8080" {
 			c.ServerAddress = conf.ServerAddress
 		}
+		if c.Key == "" {
+			c.Key = conf.Key
+		}
 		if c.ReportInterval == 10 {
 			c.ReportInterval = conf.ReportInterval
 		}
 		if c.PollInterval == 2 {
 			c.PollInterval = conf.PollInterval
+		}
+		if c.RateLimit == 2 {
+			c.RateLimit = conf.RateLimit
 		}
 		if c.CryptoKey == "" {
 			c.CryptoKey = conf.CryptoKey

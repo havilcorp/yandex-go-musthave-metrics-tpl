@@ -1,3 +1,4 @@
+// Package cryptorsa пакет для шифрования и расшифрования трафика
 package cryptorsa
 
 import (

@@ -132,7 +132,7 @@ func main() {
 	}
 
 	terminateSignals := make(chan os.Signal, 1)
-	signal.Notify(terminateSignals, syscall.SIGINT)
+	signal.Notify(terminateSignals, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	<-terminateSignals
 	if err = server.Shutdown(context.Background()); err != nil {
 		logrus.Error(err)

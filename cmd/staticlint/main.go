@@ -16,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/fatih/errwrap/errwrap"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/analysis/osexit"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/pkg/analysis/osexit"
 	"github.com/kisielk/errcheck/errcheck"
 	"github.com/sirupsen/logrus"
 	"github.com/timakin/bodyclose/passes/bodyclose"

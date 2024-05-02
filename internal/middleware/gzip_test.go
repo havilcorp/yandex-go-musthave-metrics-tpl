@@ -18,6 +18,7 @@ func TestGzipMiddleware(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		w.WriteHeader(200)
 	})
 	buf := bytes.NewBuffer(nil)
 	zb := gzip.NewWriter(buf)

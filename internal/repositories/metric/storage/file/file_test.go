@@ -9,6 +9,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// func TestNewFileStorage(t *testing.T) {
+// 	conf := server.Config{
+// 		StoreInterval: 999,
+// 		IsRestore:     false,
+// 		FileStoragePath: ".",
+// 	}
+// 	_, err := NewFileStorage(&conf)
+// 	if err != nil {
+// 		t.Errorf("NewFileStorage %v", err)
+// 	}
+// }
+
 func TestFileStorage_AddGaugeBulk(t *testing.T) {
 	conf := server.Config{
 		StoreInterval: 999,
@@ -96,5 +108,14 @@ func TestFileStorage_SaveToFile_LoadFromFile(t *testing.T) {
 	err = store.LoadFromFile(context.Background())
 	if err != nil {
 		t.Errorf("SaveToFile %v", err)
+	}
+	conf2 := server.Config{
+		StoreInterval:   999,
+		IsRestore:       true,
+		FileStoragePath: "/tmp/test-metrics-db.json",
+	}
+	_, err = NewFileStorage(&conf2)
+	if err != nil {
+		t.Errorf("NewFileStorage %v", err)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/hmac"
+	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -156,7 +157,8 @@ func (m *Metric) Send() error {
 		return fmt.Errorf("sendMetrics => %w", err)
 	}
 	if m.config.CryptoKey != "" {
-		pub, err := cryptorsa.LoadPublicKey(m.config.CryptoKey)
+		var pub *rsa.PublicKey
+		pub, err = cryptorsa.LoadPublicKey(m.config.CryptoKey)
 		if err != nil {
 			return fmt.Errorf("ParsePKCS1PublicKey: %w", err)
 		}

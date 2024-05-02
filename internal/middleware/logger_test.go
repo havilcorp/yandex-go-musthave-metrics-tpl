@@ -17,6 +17,7 @@ func TestLogMiddleware(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		w.WriteHeader(200)
 	})
 	r := httptest.NewRequest(http.MethodGet, "/ping", nil)
 	rw := httptest.NewRecorder()
