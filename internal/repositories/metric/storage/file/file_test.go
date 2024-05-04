@@ -9,18 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// func TestNewFileStorage(t *testing.T) {
-// 	conf := server.Config{
-// 		StoreInterval: 999,
-// 		IsRestore:     false,
-// 		FileStoragePath: ".",
-// 	}
-// 	_, err := NewFileStorage(&conf)
-// 	if err != nil {
-// 		t.Errorf("NewFileStorage %v", err)
-// 	}
-// }
-
 func TestFileStorage_AddGaugeBulk(t *testing.T) {
 	conf := server.Config{
 		StoreInterval: 999,
@@ -34,22 +22,20 @@ func TestFileStorage_AddGaugeBulk(t *testing.T) {
 		Key:   "GAUGE1",
 		Value: float64(1.1),
 	}}
-	t.Run("AddGaugeBulk", func(t *testing.T) {
-		err := store.AddGaugeBulk(context.Background(), list)
-		if err != nil {
-			t.Errorf("AddGaugeBulk %v", err)
-		}
-		listGauges, err := store.GetAllGauge(context.Background())
-		if err != nil {
-			t.Errorf("GetAllGauge %v", err)
-		}
-		require.Equal(t, listGauges["GAUGE1"], float64(1.1))
-		val, err := store.GetGauge(context.Background(), "GAUGE1")
-		if err != nil {
-			t.Errorf("GetGauge %v", err)
-		}
-		require.Equal(t, val, float64(1.1))
-	})
+	err = store.AddGaugeBulk(context.Background(), list)
+	if err != nil {
+		t.Errorf("AddGaugeBulk %v", err)
+	}
+	listGauges, err := store.GetAllGauge(context.Background())
+	if err != nil {
+		t.Errorf("GetAllGauge %v", err)
+	}
+	require.Equal(t, listGauges["GAUGE1"], float64(1.1))
+	val, err := store.GetGauge(context.Background(), "GAUGE1")
+	if err != nil {
+		t.Errorf("GetGauge %v", err)
+	}
+	require.Equal(t, val, float64(1.1))
 }
 
 func TestFileStorage_AddCounterBulk(t *testing.T) {
@@ -65,22 +51,20 @@ func TestFileStorage_AddCounterBulk(t *testing.T) {
 		Key:   "COUNTER1",
 		Value: int64(1),
 	}}
-	t.Run("AddCounterBulk", func(t *testing.T) {
-		err := store.AddCounterBulk(context.Background(), list)
-		if err != nil {
-			t.Errorf("AddCounterBulk %v", err)
-		}
-		listCounters, err := store.GetAllCounters(context.Background())
-		if err != nil {
-			t.Errorf("GetAllGauge %v", err)
-		}
-		require.Equal(t, listCounters["COUNTER1"], int64(1))
-		val, err := store.GetCounter(context.Background(), "COUNTER1")
-		if err != nil {
-			t.Errorf("GetCounter %v", err)
-		}
-		require.Equal(t, val, int64(1))
-	})
+	err = store.AddCounterBulk(context.Background(), list)
+	if err != nil {
+		t.Errorf("AddCounterBulk %v", err)
+	}
+	listCounters, err := store.GetAllCounters(context.Background())
+	if err != nil {
+		t.Errorf("GetAllGauge %v", err)
+	}
+	require.Equal(t, listCounters["COUNTER1"], int64(1))
+	val, err := store.GetCounter(context.Background(), "COUNTER1")
+	if err != nil {
+		t.Errorf("GetCounter %v", err)
+	}
+	require.Equal(t, val, int64(1))
 }
 
 func TestFileStorage_SaveToFile_LoadFromFile(t *testing.T) {
@@ -109,12 +93,12 @@ func TestFileStorage_SaveToFile_LoadFromFile(t *testing.T) {
 	if err != nil {
 		t.Errorf("SaveToFile %v", err)
 	}
-	conf2 := server.Config{
+	confForTestRestore := server.Config{
 		StoreInterval:   999,
 		IsRestore:       true,
 		FileStoragePath: "/tmp/test-metrics-db.json",
 	}
-	_, err = NewFileStorage(&conf2)
+	_, err = NewFileStorage(&confForTestRestore)
 	if err != nil {
 		t.Errorf("NewFileStorage %v", err)
 	}

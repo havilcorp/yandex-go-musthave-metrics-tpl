@@ -17,14 +17,14 @@ func TestLogMiddleware(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 	})
 	r := httptest.NewRequest(http.MethodGet, "/ping", nil)
 	rw := httptest.NewRecorder()
 	lm := LogMiddleware(testHandler)
 	lm.ServeHTTP(rw, r)
 	res := rw.Result()
-	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
 	defer func() {
 		if err := res.Body.Close(); err != nil {
 			logrus.Error(err)

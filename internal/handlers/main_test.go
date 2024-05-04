@@ -61,8 +61,6 @@ func TestMainHandler_MainPageHandler(t *testing.T) {
 func TestMainHandler_Register(t *testing.T) {
 	r := chi.NewRouter()
 	mainHandler := mocks.NewIMain(t)
-	t.Run("Register", func(t *testing.T) {
-		h := NewMainHandler(mainHandler)
-		h.Register(r)
-	})
+	h := NewMainHandler(mainHandler)
+	h.Register(r)
 }

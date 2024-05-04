@@ -32,7 +32,7 @@ func TestHashSHA256Middleware(t *testing.T) {
 	rw := httptest.NewRecorder()
 	HashSHA256Middleware("key")(testHandler).ServeHTTP(rw, r)
 	res := rw.Result()
-	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
 	defer func() {
 		if err := res.Body.Close(); err != nil {
 			logrus.Error(err)
@@ -46,7 +46,7 @@ func TestRsaMiddleware(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 	})
 	pubKey, err := cryptorsa.LoadPublicKey("../../tls/key.pub")
 	if err != nil {
@@ -59,9 +59,9 @@ func TestRsaMiddleware(t *testing.T) {
 	}
 	r := httptest.NewRequest(http.MethodPost, "/ping", strings.NewReader(string(messCrypt)))
 	rw := httptest.NewRecorder()
-	RsaMiddleware("../../tls/priv.pem")(testHandler).ServeHTTP(rw, r)
+	RSAMiddleware("../../tls/priv.pem")(testHandler).ServeHTTP(rw, r)
 	res := rw.Result()
-	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
 	defer func() {
 		if err := res.Body.Close(); err != nil {
 			logrus.Error(err)

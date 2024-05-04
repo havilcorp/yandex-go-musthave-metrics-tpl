@@ -12,30 +12,29 @@ import (
 )
 
 func TestMetricFactory(t *testing.T) {
-	t.Run("Test mem storage", func(t *testing.T) {
-		conf := server.NewServerConfig()
-		var err error
-		_, err = MetricFactory("memory", conf, nil)
-		if err != nil {
-			t.Error(err)
-			return
+	conf := server.NewServerConfig()
+	var err error
+	_, err = MetricFactory("memory", conf, nil)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, err = MetricFactory("file", conf, nil)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
+	}
+	defer func() {
+		if err = db.Close(); err != nil {
+			logrus.Error(err)
 		}
-		_, err = MetricFactory("file", conf, nil)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		db, mock, err := sqlmock.New()
-		if err != nil {
-			t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
-		}
-		defer func() {
-			if err = db.Close(); err != nil {
-				logrus.Error(err)
-			}
-		}()
-		mock.ExpectBegin()
-		mock.ExpectExec(regexp.QuoteMeta(`
+	}()
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta(`
 			CREATE TABLE IF NOT EXISTS gauge (
 				id SERIAL PRIMARY KEY,
 				key varchar(100) UNIQUE NOT NULL, 
@@ -43,7 +42,7 @@ func TestMetricFactory(t *testing.T) {
 				created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			);
 		`)).WillReturnResult(driver.ResultNoRows)
-		mock.ExpectExec(regexp.QuoteMeta(`
+	mock.ExpectExec(regexp.QuoteMeta(`
 			CREATE TABLE IF NOT EXISTS counter (
 				id SERIAL PRIMARY KEY,
 				key varchar(100) UNIQUE NOT NULL, 
@@ -51,16 +50,15 @@ func TestMetricFactory(t *testing.T) {
 				created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 			);
 		`)).WillReturnResult(driver.ResultNoRows)
-		mock.ExpectCommit()
-		_, err = MetricFactory("psql", conf, db)
-		if err != nil {
-			t.Error(err)
-			return
-		}
-		_, err = MetricFactory("none", conf, nil)
-		if err == nil {
-			t.Error(err)
-			return
-		}
-	})
+	mock.ExpectCommit()
+	_, err = MetricFactory("psql", conf, db)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, err = MetricFactory("none", conf, nil)
+	if err == nil {
+		t.Error(err)
+		return
+	}
 }

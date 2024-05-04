@@ -37,12 +37,10 @@ func TestPsqlStorage_AddGauge(t *testing.T) {
 	psqlStorage := PsqlStorage{
 		db: db,
 	}
-	t.Run("AddGauge", func(t *testing.T) {
-		err = psqlStorage.AddGauge(context.Background(), "GAUGE", 1.1)
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	err = psqlStorage.AddGauge(context.Background(), "GAUGE", 1.1)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestPsqlStorage_AddCounter(t *testing.T) {
@@ -69,12 +67,10 @@ func TestPsqlStorage_AddCounter(t *testing.T) {
 	psqlStorage := PsqlStorage{
 		db: db,
 	}
-	t.Run("AddCounter", func(t *testing.T) {
-		err = psqlStorage.AddCounter(context.Background(), "COUNTER", 1)
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	err = psqlStorage.AddCounter(context.Background(), "COUNTER", 1)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestPsqlStorage_AddGaugeBulk(t *testing.T) {
@@ -115,15 +111,13 @@ func TestPsqlStorage_AddGaugeBulk(t *testing.T) {
 	psqlStorage := PsqlStorage{
 		db: db,
 	}
-	t.Run("AddGaugeBulk", func(t *testing.T) {
-		list := make([]domain.Gauge, 0)
-		list = append(list, domain.Gauge{Key: "GAUGE1", Value: 1.1})
-		list = append(list, domain.Gauge{Key: "GAUGE2", Value: 1.2})
-		err = psqlStorage.AddGaugeBulk(context.Background(), list)
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	list := make([]domain.Gauge, 0)
+	list = append(list, domain.Gauge{Key: "GAUGE1", Value: 1.1})
+	list = append(list, domain.Gauge{Key: "GAUGE2", Value: 1.2})
+	err = psqlStorage.AddGaugeBulk(context.Background(), list)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestPsqlStorage_AddCounterBulk(t *testing.T) {
@@ -164,15 +158,13 @@ func TestPsqlStorage_AddCounterBulk(t *testing.T) {
 	psqlStorage := PsqlStorage{
 		db: db,
 	}
-	t.Run("AddGaugeBulk", func(t *testing.T) {
-		list := make([]domain.Counter, 0)
-		list = append(list, domain.Counter{Key: "COUNTER1", Value: 1})
-		list = append(list, domain.Counter{Key: "COUNTER2", Value: 2})
-		err = psqlStorage.AddCounterBulk(context.Background(), list)
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	list := make([]domain.Counter, 0)
+	list = append(list, domain.Counter{Key: "COUNTER1", Value: 1})
+	list = append(list, domain.Counter{Key: "COUNTER2", Value: 2})
+	err = psqlStorage.AddCounterBulk(context.Background(), list)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestPsqlStorage_GetGauge(t *testing.T) {
@@ -181,7 +173,7 @@ func TestPsqlStorage_GetGauge(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer func() {
-		if err := db.Close(); err != nil {
+		if err = db.Close(); err != nil {
 			logrus.Error(err)
 		}
 	}()
@@ -191,15 +183,13 @@ func TestPsqlStorage_GetGauge(t *testing.T) {
 	psqlStorage := PsqlStorage{
 		db: db,
 	}
-	t.Run("GetGauge", func(t *testing.T) {
-		val, err := psqlStorage.GetGauge(context.Background(), "GAUGE")
-		if err != nil {
-			t.Error(err)
-		}
-		if val != 1.1 {
-			t.Error(errors.New("value not equil"))
-		}
-	})
+	val, err := psqlStorage.GetGauge(context.Background(), "GAUGE")
+	if err != nil {
+		t.Error(err)
+	}
+	if val != 1.1 {
+		t.Error(errors.New("value not equil"))
+	}
 }
 
 func TestPsqlStorage_GetCounter(t *testing.T) {
@@ -208,7 +198,7 @@ func TestPsqlStorage_GetCounter(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer func() {
-		if err := db.Close(); err != nil {
+		if err = db.Close(); err != nil {
 			logrus.Error(err)
 		}
 	}()
@@ -218,15 +208,13 @@ func TestPsqlStorage_GetCounter(t *testing.T) {
 	psqlStorage := PsqlStorage{
 		db: db,
 	}
-	t.Run("GetCounter", func(t *testing.T) {
-		val, err := psqlStorage.GetCounter(context.Background(), "COUNTER")
-		if err != nil {
-			t.Error(err)
-		}
-		if val != 1 {
-			t.Error(errors.New("value not equil"))
-		}
-	})
+	val, err := psqlStorage.GetCounter(context.Background(), "COUNTER")
+	if err != nil {
+		t.Error(err)
+	}
+	if val != 1 {
+		t.Error(errors.New("value not equil"))
+	}
 }
 
 func TestPsqlStorage_GetAllGauge(t *testing.T) {
@@ -235,7 +223,7 @@ func TestPsqlStorage_GetAllGauge(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer func() {
-		if err := db.Close(); err != nil {
+		if err = db.Close(); err != nil {
 			logrus.Error(err)
 		}
 	}()
@@ -246,12 +234,10 @@ func TestPsqlStorage_GetAllGauge(t *testing.T) {
 	psqlStorage := PsqlStorage{
 		db: db,
 	}
-	t.Run("GetAllGauge", func(t *testing.T) {
-		_, err := psqlStorage.GetAllGauge(context.Background())
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	_, err = psqlStorage.GetAllGauge(context.Background())
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestPsqlStorage_GetAllCounters(t *testing.T) {
@@ -260,7 +246,7 @@ func TestPsqlStorage_GetAllCounters(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer func() {
-		if err := db.Close(); err != nil {
+		if err = db.Close(); err != nil {
 			logrus.Error(err)
 		}
 	}()
@@ -271,12 +257,10 @@ func TestPsqlStorage_GetAllCounters(t *testing.T) {
 	psqlStorage := PsqlStorage{
 		db: db,
 	}
-	t.Run("GetAllCounters", func(t *testing.T) {
-		_, err := psqlStorage.GetAllCounters(context.Background())
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	_, err = psqlStorage.GetAllCounters(context.Background())
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestPsqlStorage_Bootstrap(t *testing.T) {
@@ -286,7 +270,7 @@ func TestPsqlStorage_Bootstrap(t *testing.T) {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 	defer func() {
-		if err := db.Close(); err != nil {
+		if err = db.Close(); err != nil {
 			logrus.Error(err)
 		}
 	}()
@@ -308,10 +292,8 @@ func TestPsqlStorage_Bootstrap(t *testing.T) {
 		);
 	`)).WillReturnResult(driver.ResultNoRows)
 	mock.ExpectCommit()
-	t.Run("Bootstrap", func(t *testing.T) {
-		_, err := NewPsqlStorage(conf, db)
-		if err != nil {
-			t.Error(err)
-		}
-	})
+	_, err = NewPsqlStorage(conf, db)
+	if err != nil {
+		t.Error(err)
+	}
 }

@@ -25,7 +25,7 @@ func NewServerConfig() *Config {
 	return &Config{}
 }
 
-// WriteServerConfig чтение настроек сервера, env перекрывают флаги
+// WriteByFlag чтение настроек сервера через флаги
 //
 // Флаги
 //   - -a - адрес и порт сервера
@@ -36,6 +36,20 @@ func NewServerConfig() *Config {
 //   - -r - ключ sha256
 //   - -crypto-key - путь к файлу с приватным ключем для расшифрования сообщения
 //   - -c - путь к файлу конфигов
+func (c *Config) WriteByFlag() error {
+	flag.StringVar(&c.ServerAddress, "a", "localhost:8080", "address and port to run server")
+	flag.IntVar(&c.StoreInterval, "i", 300, "store save interval time in sec")
+	flag.StringVar(&c.FileStoragePath, "f", "/tmp/metrics-db.json", "file store path save")
+	flag.BoolVar(&c.IsRestore, "r", true, "is restore")
+	flag.StringVar(&c.DBConnect, "d", "", "db connect string")
+	flag.StringVar(&c.Key, "k", "", "sha256 key")
+	flag.StringVar(&c.CryptoKey, "crypto-key", "", "private key path")
+	flag.StringVar(&c.Config, "c", "", "config path")
+	flag.Parse()
+	return nil
+}
+
+// WriteByEnv чтение настроек сервера, env перекрывают флаги
 //
 // Env
 //   - ADDRESS - адрес и порт сервера
@@ -46,17 +60,7 @@ func NewServerConfig() *Config {
 //   - KEY - ключ sha256
 //   - CRYPTO_KEY - путь до файла с приватным ключем для расшифрования сообщения
 //   - CONFIG - путь к файлу конфигов
-func (c *Config) WriteServerConfig() error {
-	flag.StringVar(&c.ServerAddress, "a", "localhost:8080", "address and port to run server")
-	flag.IntVar(&c.StoreInterval, "i", 300, "store save interval time in sec")
-	flag.StringVar(&c.FileStoragePath, "f", "/tmp/metrics-db.json", "file store path save")
-	flag.BoolVar(&c.IsRestore, "r", true, "is restore")
-	flag.StringVar(&c.DBConnect, "d", "", "db connect string")
-	flag.StringVar(&c.Key, "k", "", "sha256 key")
-	flag.StringVar(&c.CryptoKey, "crypto-key", "", "private key path")
-	flag.StringVar(&c.Config, "c", "", "config path")
-	flag.Parse()
-
+func (c *Config) WriteByEnv() error {
 	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
 		c.ServerAddress = envServerAddress
 	}

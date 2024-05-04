@@ -24,7 +24,7 @@ func NewAgentConfig() *Config {
 	return &Config{}
 }
 
-// WriteAgentConfig чтение настроек агента, env перекрывают флаги
+// WriteByFlag чтение настроек агента через флаги
 //
 // Флаги
 //   - -a - адрес и порт сервера
@@ -34,6 +34,19 @@ func NewAgentConfig() *Config {
 //   - -l - лимит запросов
 //   - -crypto-key - путь к файлу с публичным ключем для шифрования сообщения
 //   - -c - путь к файлу конфигов
+func (c *Config) WriteByFlag() error {
+	flag.StringVar(&c.ServerAddress, "a", "localhost:8080", "address and port to run server")
+	flag.IntVar(&c.ReportInterval, "r", 10, "report interval time in sec")
+	flag.IntVar(&c.PollInterval, "p", 2, "poll interval time in sec")
+	flag.StringVar(&c.Key, "k", "", "sha256 key")
+	flag.IntVar(&c.RateLimit, "l", 2, "rate limit")
+	flag.StringVar(&c.CryptoKey, "crypto-key", "", "public key path")
+	flag.StringVar(&c.Config, "c", "", "config path")
+	flag.Parse()
+	return nil
+}
+
+// WriteByEnv чтение настроек агента, env перекрывают флаги
 //
 // Env
 //   - ADDRESS - адрес и порт сервера
@@ -43,16 +56,7 @@ func NewAgentConfig() *Config {
 //   - RATE_LIMIT - лимит запросов
 //   - CRYPTO_KEY - путь до файла с публичным ключем для шифрования сообщения
 //   - CONFIG - путь к файлу конфигов
-func (c *Config) WriteAgentConfig() error {
-	flag.StringVar(&c.ServerAddress, "a", "localhost:8080", "address and port to run server")
-	flag.IntVar(&c.ReportInterval, "r", 10, "report interval time in sec")
-	flag.IntVar(&c.PollInterval, "p", 2, "poll interval time in sec")
-	flag.StringVar(&c.Key, "k", "", "sha256 key")
-	flag.IntVar(&c.RateLimit, "l", 2, "rate limit")
-	flag.StringVar(&c.CryptoKey, "crypto-key", "", "public key path")
-	flag.StringVar(&c.Config, "c", "", "config path")
-	flag.Parse()
-
+func (c *Config) WriteByEnv() error {
 	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
 		c.ServerAddress = envServerAddress
 	}
@@ -68,7 +72,7 @@ func (c *Config) WriteAgentConfig() error {
 	if envPoolInterval := os.Getenv("POLL_INTERVAL"); envPoolInterval != "" {
 		envPoolIntervalVal, err := strconv.Atoi(envPoolInterval)
 		if err != nil {
-			return nil
+			return err
 		}
 		c.PollInterval = envPoolIntervalVal
 	}

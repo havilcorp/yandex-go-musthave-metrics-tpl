@@ -43,8 +43,11 @@ var (
 // main входная точка запуска агента
 func main() {
 	conf := agent.NewAgentConfig()
-	err := conf.WriteAgentConfig()
-	if err != nil {
+	if err := conf.WriteByFlag(); err != nil {
+		log.Fatal(err)
+		return
+	}
+	if err := conf.WriteByEnv(); err != nil {
 		log.Fatal(err)
 		return
 	}

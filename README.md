@@ -76,6 +76,8 @@ go run cmd/staticlint/main.go ./...
 - анализатор github.com/timakin/bodyclose/passes/bodyclose Проверка закрытия тела запроса
 - анализатор github.com/kisielk/errcheck/errcheck Проверки непроверенных ошибок в коде
 - анализатор для проверки os.Exit в пакете main в функции main
+- анализатор для проверки fmt.Print в коде
+- анализатор для проверки закомментированного кода
 
 ## Обновление шаблона
 

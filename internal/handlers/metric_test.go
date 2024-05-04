@@ -453,8 +453,11 @@ func TestMetricHandler_GetGaugeMetricHandler(t *testing.T) {
 
 func Example() {
 	conf := server.NewServerConfig()
-	err := conf.WriteServerConfig()
-	if err != nil {
+	if err := conf.WriteByFlag(); err != nil {
+		logrus.Error(err)
+		return
+	}
+	if err := conf.WriteByEnv(); err != nil {
 		logrus.Error(err)
 		return
 	}
@@ -470,8 +473,6 @@ func Example() {
 func TestMetricHandler_Register(t *testing.T) {
 	r := chi.NewRouter()
 	metricHandler := mocks.NewIMetric(t)
-	t.Run("Register", func(t *testing.T) {
-		h := NewMetricHandler(metricHandler)
-		h.Register(r)
-	})
+	h := NewMetricHandler(metricHandler)
+	h.Register(r)
 }

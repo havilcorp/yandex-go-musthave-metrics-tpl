@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -31,9 +32,12 @@ var (
 // main входная точка запуска сервера
 func main() {
 	conf := server.NewServerConfig()
-	err := conf.WriteServerConfig()
-	if err != nil {
-		logrus.Error(err)
+	if err := conf.WriteByFlag(); err != nil {
+		log.Fatal(err)
+		return
+	}
+	if err := conf.WriteByEnv(); err != nil {
+		log.Fatal(err)
 		return
 	}
 
@@ -46,7 +50,7 @@ func main() {
 
 	if conf.DBConnect != "" {
 		provider = "psql"
-		db, err = sql.Open("pgx", conf.DBConnect)
+		db, err := sql.Open("pgx", conf.DBConnect)
 		if err != nil {
 			logrus.Errorf("pgx init => %v", err)
 			return
@@ -84,7 +88,7 @@ func main() {
 	r.Use(middleware.LogMiddleware)
 	r.Use(middleware.GzipMiddleware)
 	if conf.CryptoKey != "" {
-		r.Use(middleware.RsaMiddleware(conf.CryptoKey))
+		r.Use(middleware.RSAMiddleware(conf.CryptoKey))
 	}
 	r.Use(middleware.HashSHA256Middleware(conf.Key))
 
