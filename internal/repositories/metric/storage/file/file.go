@@ -11,17 +11,17 @@ import (
 	"time"
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/server"
 )
 
 type FileStorage struct {
-	Conf    *config.Config
+	Conf    *server.Config
 	Gauge   map[string]float64
 	Counter map[string]int64
 }
 
 // NewFileStorage инициализация файлового хранилища
-func NewFileStorage(conf *config.Config) (*FileStorage, error) {
+func NewFileStorage(conf *server.Config) (*FileStorage, error) {
 	ctx := context.Background()
 	fileStorage := FileStorage{
 		Conf:    conf,

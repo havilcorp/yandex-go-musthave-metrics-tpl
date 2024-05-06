@@ -16,7 +16,9 @@ import (
 	"strings"
 
 	"github.com/fatih/errwrap/errwrap"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/analysis/osexit"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/pkg/analysis/commentcode"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/pkg/analysis/fmtprint"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/pkg/analysis/osexit"
 	"github.com/kisielk/errcheck/errcheck"
 	"github.com/sirupsen/logrus"
 	"github.com/timakin/bodyclose/passes/bodyclose"
@@ -78,8 +80,10 @@ func main() {
 		errwrap.Analyzer,
 		bodyclose.Analyzer,
 		errcheck.Analyzer,
-		// osexit
+		// my Analizers
 		osexit.Analyzer,
+		commentcode.Analyzer,
+		fmtprint.Analyzer,
 		// passes
 		appends.Analyzer,
 		asmdecl.Analyzer,

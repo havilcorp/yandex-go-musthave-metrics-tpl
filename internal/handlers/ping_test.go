@@ -49,8 +49,6 @@ func TestPingHandler_CheckDBHandler(t *testing.T) {
 func TestPingHandler_Register(t *testing.T) {
 	r := chi.NewRouter()
 	pinger := mocks.NewPinger(t)
-	t.Run("Register", func(t *testing.T) {
-		h := NewPingHandler(pinger)
-		h.Register(r)
-	})
+	h := NewPingHandler(pinger)
+	h.Register(r)
 }

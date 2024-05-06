@@ -8,8 +8,6 @@ import (
 
 func TestPPROFHandler_Register(t *testing.T) {
 	r := chi.NewRouter()
-	t.Run("Register", func(t *testing.T) {
-		h := NewPPROFHandler()
-		h.Register(r)
-	})
+	h := NewPPROFHandler()
+	h.Register(r)
 }

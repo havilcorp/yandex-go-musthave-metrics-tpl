@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/agent"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/metric"
 	"github.com/sirupsen/logrus"
 )
@@ -42,9 +42,12 @@ var (
 
 // main входная точка запуска агента
 func main() {
-	conf := config.NewConfig()
-	err := conf.WriteAgentConfig()
-	if err != nil {
+	conf := agent.NewAgentConfig()
+	if err := conf.WriteByFlag(); err != nil {
+		log.Fatal(err)
+		return
+	}
+	if err := conf.WriteByEnv(); err != nil {
 		log.Fatal(err)
 		return
 	}
@@ -95,7 +98,7 @@ func main() {
 	}()
 
 	terminateSignals := make(chan os.Signal, 1)
-	signal.Notify(terminateSignals, syscall.SIGINT)
+	signal.Notify(terminateSignals, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	<-terminateSignals
 	timePoolTracker.Stop()
 	timeReportTracker.Stop()

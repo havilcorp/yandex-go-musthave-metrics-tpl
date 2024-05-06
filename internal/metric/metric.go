@@ -5,30 +5,33 @@ import (
 	"bytes"
 	"compress/gzip"
 	"crypto/hmac"
+	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/rand"
+	mr "math/rand"
 	"runtime"
 	"sync"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/agent"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/cryptorsa"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
+	"github.com/sirupsen/logrus"
 )
 
 type Metric struct {
 	mutex  *sync.Mutex
-	config *config.Config
+	config *agent.Config
 	value  map[string]float64
 	delta  map[string]int64
 }
 
-func NewMetric(config *config.Config) *Metric {
+func NewMetric(config *agent.Config) *Metric {
 	return &Metric{
 		mutex:  &sync.Mutex{},
 		config: config,
@@ -131,12 +134,13 @@ func (m *Metric) WriteMain() {
 	m.value["StackSys"] = float64(memStats.StackSys)
 	m.value["Sys"] = float64(memStats.Sys)
 	m.value["TotalAlloc"] = float64(memStats.TotalAlloc)
-	m.value["RandomValue"] = float64(rand.Intn(10))
+	m.value["RandomValue"] = float64(mr.Intn(10))
 	m.delta["PollCount"] = int64(1)
 }
 
 // Send отправка метрик на сервер
 func (m *Metric) Send() error {
+	logrus.Info("SEND")
 	client := resty.New()
 	url := fmt.Sprintf("http://%s/updates", m.config.ServerAddress)
 	buf := bytes.NewBuffer(nil)
@@ -151,6 +155,17 @@ func (m *Metric) Send() error {
 	jsonMetric, err := json.Marshal(metrics)
 	if err != nil {
 		return fmt.Errorf("sendMetrics => %w", err)
+	}
+	if m.config.CryptoKey != "" {
+		var pub *rsa.PublicKey
+		pub, err = cryptorsa.LoadPublicKey(m.config.CryptoKey)
+		if err != nil {
+			return fmt.Errorf("ParsePKCS1PublicKey: %w", err)
+		}
+		jsonMetric, err = cryptorsa.EncryptOAEP(pub, jsonMetric)
+		if err != nil {
+			return fmt.Errorf("EncryptOAEP: %w", err)
+		}
 	}
 	_, err = zb.Write(jsonMetric)
 	if err != nil {

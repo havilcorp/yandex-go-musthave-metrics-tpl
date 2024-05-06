@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/cryptorsa"
 	"github.com/sirupsen/logrus"
 )
 
@@ -42,6 +43,39 @@ func HashSHA256Middleware(key string) func(http.Handler) http.Handler {
 					w.WriteHeader(http.StatusBadRequest)
 				}
 			}
+			h.ServeHTTP(w, r)
+		})
+	}
+}
+
+func RSAMiddleware(filepath string) func(http.Handler) http.Handler {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				logrus.Error(err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			err = r.Body.Close()
+			if err != nil {
+				logrus.Error(err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			priv, err := cryptorsa.LoadPrivateKey(filepath)
+			if err != nil {
+				logrus.Error(err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			bodyDecode, err := cryptorsa.DecryptOAEP(priv, body)
+			if err != nil {
+				logrus.Error(err)
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			r.Body = io.NopCloser(bytes.NewBuffer(bodyDecode))
 			h.ServeHTTP(w, r)
 		})
 	}

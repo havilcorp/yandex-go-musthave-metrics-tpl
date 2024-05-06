@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -13,7 +14,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/server"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/middleware"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/repositories"
@@ -30,10 +31,13 @@ var (
 
 // main входная точка запуска сервера
 func main() {
-	conf := config.NewConfig()
-	err := conf.WriteServerConfig()
-	if err != nil {
-		logrus.Error(err)
+	conf := server.NewServerConfig()
+	if err := conf.WriteByFlag(); err != nil {
+		log.Fatal(err)
+		return
+	}
+	if err := conf.WriteByEnv(); err != nil {
+		log.Fatal(err)
 		return
 	}
 
@@ -46,7 +50,7 @@ func main() {
 
 	if conf.DBConnect != "" {
 		provider = "psql"
-		db, err = sql.Open("pgx", conf.DBConnect)
+		db, err := sql.Open("pgx", conf.DBConnect)
 		if err != nil {
 			logrus.Errorf("pgx init => %v", err)
 			return
@@ -83,6 +87,9 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.LogMiddleware)
 	r.Use(middleware.GzipMiddleware)
+	if conf.CryptoKey != "" {
+		r.Use(middleware.RSAMiddleware(conf.CryptoKey))
+	}
 	r.Use(middleware.HashSHA256Middleware(conf.Key))
 
 	handlers.NewPPROFHandler().Register(r)
@@ -129,7 +136,7 @@ func main() {
 	}
 
 	terminateSignals := make(chan os.Signal, 1)
-	signal.Notify(terminateSignals, syscall.SIGINT)
+	signal.Notify(terminateSignals, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	<-terminateSignals
 	if err = server.Shutdown(context.Background()); err != nil {
 		logrus.Error(err)

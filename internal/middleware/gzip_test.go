@@ -18,6 +18,7 @@ func TestGzipMiddleware(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		w.WriteHeader(http.StatusOK)
 	})
 	buf := bytes.NewBuffer(nil)
 	zb := gzip.NewWriter(buf)
@@ -37,7 +38,7 @@ func TestGzipMiddleware(t *testing.T) {
 	lm := GzipMiddleware(testHandler)
 	lm.ServeHTTP(rw, r)
 	res := rw.Result()
-	assert.Equal(t, 200, res.StatusCode)
+	assert.Equal(t, http.StatusOK, res.StatusCode)
 	defer func() {
 		if err := res.Body.Close(); err != nil {
 			logrus.Error(err)
