@@ -36,7 +36,7 @@ func (store *PsqlStorage) Bootstrap(ctx context.Context) error {
 	}
 	defer func() {
 		if err = tx.Rollback(); err != nil {
-			logrus.Error(err)
+			logrus.Info(err)
 		}
 	}()
 	_, err = tx.ExecContext(ctx, `

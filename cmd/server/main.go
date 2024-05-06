@@ -47,10 +47,11 @@ func main() {
 
 	provider := "memory"
 	var db *sql.DB
+	var err error
 
 	if conf.DBConnect != "" {
 		provider = "psql"
-		db, err := sql.Open("pgx", conf.DBConnect)
+		db, err = sql.Open("pgx", conf.DBConnect)
 		if err != nil {
 			logrus.Errorf("pgx init => %v", err)
 			return
