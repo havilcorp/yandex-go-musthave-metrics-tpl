@@ -6,8 +6,6 @@ import (
 	"flag"
 	"os"
 	"strconv"
-
-	"github.com/sirupsen/logrus"
 )
 
 type Config struct {
@@ -102,7 +100,6 @@ func (c *Config) WriteByEnv() error {
 		if err != nil {
 			return err
 		}
-		logrus.Info(string(data))
 		conf := Config{
 			ServerAddress:   "localhost:8080",
 			StoreInterval:   300,

@@ -3,6 +3,6 @@
 	"restore": true,
 	"store_interval": 300,
 	"store_file": "/tmp/metrics-db.json",
-	"database_dsn": "",
+	"database_dsn": "postgres://postgres:password@localhost:5433/postgres?sslmode=disable",
 	"crypto_key": "./tls/priv.pem"
 }
