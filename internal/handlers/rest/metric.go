@@ -1,5 +1,5 @@
-// Package handlers роуты сервера
-package handlers
+// Package rest роуты сервера
+package rest
 
 import (
 	"context"

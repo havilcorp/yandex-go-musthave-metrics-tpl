@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	mr "math/rand"
+	"net"
 	"runtime"
 	"sync"
 	"time"
@@ -183,6 +184,13 @@ func (m *Metric) Send() error {
 		r.Header.Set("HashSHA256", hashSha256)
 	}
 	r.SetBody(buf)
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return fmt.Errorf("get ip address => %w", err)
+	}
+	defer conn.Close()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	r.Header.Set("X-Real-IP", localAddr.IP.To4().String())
 	if _, err := r.Post(url); err != nil {
 		return fmt.Errorf("sendMetrics => %w", err)
 	}

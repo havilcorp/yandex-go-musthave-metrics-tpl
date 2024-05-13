@@ -21,6 +21,7 @@ func TestConfig_WriteByEnv(t *testing.T) {
 		t.Setenv("KEY", "KEY")
 		t.Setenv("CRYPTO_KEY", "CRYPTO_KEY")
 		t.Setenv("CONFIG", "../../../config/server.json")
+		t.Setenv("TRUSTED_SUBNET", "192.168.1.0/24")
 		if err := conf.WriteByEnv(); (err != nil) != false {
 			t.Errorf("Config.WriteServerConfig() error = %v, wantErr %v", err, false)
 		}
@@ -34,6 +35,7 @@ func TestConfig_WriteByEnv(t *testing.T) {
 		t.Setenv("KEY", "KEY")
 		t.Setenv("CRYPTO_KEY", "CRYPTO_KEY")
 		t.Setenv("CONFIG", "../../../config/server.json")
+		t.Setenv("TRUSTED_SUBNET", "192.168.1.0/24")
 		err := conf.WriteByEnv()
 		if err == nil {
 			t.Error("Config.WriteByEnv() not error")

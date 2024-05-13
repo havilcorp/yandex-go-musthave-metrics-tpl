@@ -17,6 +17,7 @@ type Config struct {
 	CryptoKey       string `json:"crypto_key"`
 	IsRestore       bool   `json:"restore"`
 	StoreInterval   int    `json:"store_interval"`
+	TrustedSubnet   string `json:"trusted_subnet"`
 }
 
 func NewServerConfig() *Config {
@@ -34,6 +35,7 @@ func NewServerConfig() *Config {
 //   - -r - ключ sha256
 //   - -crypto-key - путь к файлу с приватным ключем для расшифрования сообщения
 //   - -c - путь к файлу конфигов
+//   - -t - доверенная маска подсети
 func (c *Config) WriteByFlag() error {
 	flag.StringVar(&c.ServerAddress, "a", "localhost:8080", "address and port to run server")
 	flag.IntVar(&c.StoreInterval, "i", 300, "store save interval time in sec")
@@ -43,6 +45,7 @@ func (c *Config) WriteByFlag() error {
 	flag.StringVar(&c.Key, "k", "", "sha256 key")
 	flag.StringVar(&c.CryptoKey, "crypto-key", "", "private key path")
 	flag.StringVar(&c.Config, "c", "", "config path")
+	flag.StringVar(&c.TrustedSubnet, "t", "", "trusted subnet")
 	flag.Parse()
 	return nil
 }
@@ -58,6 +61,7 @@ func (c *Config) WriteByFlag() error {
 //   - KEY - ключ sha256
 //   - CRYPTO_KEY - путь до файла с приватным ключем для расшифрования сообщения
 //   - CONFIG - путь к файлу конфигов
+//   - TRUSTED_SUBNET - доверенная маска подсети
 func (c *Config) WriteByEnv() error {
 	if envServerAddress := os.Getenv("ADDRESS"); envServerAddress != "" {
 		c.ServerAddress = envServerAddress
@@ -95,6 +99,10 @@ func (c *Config) WriteByEnv() error {
 		c.Config = envConfig
 	}
 
+	if envTrustedSubnet := os.Getenv("TRUSTED_SUBNET"); envTrustedSubnet != "" {
+		c.TrustedSubnet = envTrustedSubnet
+	}
+
 	if c.Config != "" {
 		data, err := os.ReadFile(c.Config)
 		if err != nil {
@@ -108,6 +116,7 @@ func (c *Config) WriteByEnv() error {
 			DBConnect:       "",
 			CryptoKey:       "",
 			Key:             "",
+			TrustedSubnet:   "",
 		}
 		err = json.Unmarshal(data, &conf)
 		if err != nil {
@@ -133,6 +142,9 @@ func (c *Config) WriteByEnv() error {
 		}
 		if c.CryptoKey == "" {
 			c.CryptoKey = conf.CryptoKey
+		}
+		if c.TrustedSubnet == "" {
+			c.TrustedSubnet = conf.TrustedSubnet
 		}
 	}
 

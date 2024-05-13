@@ -15,7 +15,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/config/server"
-	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers"
+	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/handlers/rest"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/middleware"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/repositories"
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/internal/repositories/metric"
@@ -86,6 +86,9 @@ func main() {
 	}
 
 	r := chi.NewRouter()
+	if conf.TrustedSubnet != "" {
+		r.Use(middleware.TrustedSubnetMiddleware(conf.TrustedSubnet))
+	}
 	r.Use(middleware.LogMiddleware)
 	r.Use(middleware.GzipMiddleware)
 	if conf.CryptoKey != "" {
@@ -93,12 +96,12 @@ func main() {
 	}
 	r.Use(middleware.HashSHA256Middleware(conf.Key))
 
-	handlers.NewPPROFHandler().Register(r)
-	handlers.NewMainHandler(metricFactory).Register(r)
-	handlers.NewMetricHandler(metricFactory).Register(r)
+	rest.NewPPROFHandler().Register(r)
+	rest.NewMainHandler(metricFactory).Register(r)
+	rest.NewMetricHandler(metricFactory).Register(r)
 	if conf.DBConnect != "" {
 		dbRepository := repositories.NewDataBase(db)
-		handlers.NewPingHandler(dbRepository).Register(r)
+		rest.NewPingHandler(dbRepository).Register(r)
 	}
 
 	var timeTicker *time.Ticker
