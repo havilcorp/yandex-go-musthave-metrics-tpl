@@ -38,7 +38,7 @@ func TestPingHandler_CheckDBHandler(t *testing.T) {
 			res := rw.Result()
 			defer func() {
 				if err := res.Body.Close(); err != nil {
-					logrus.Error(err)
+					logrus.Info(err)
 				}
 			}()
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)

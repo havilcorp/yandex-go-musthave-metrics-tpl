@@ -1,6 +1,8 @@
 {
 	"address": ":8080",
+	"address_grpc": ":8081",
 	"report_interval": 10,
 	"poll_interval": 2,
+	"crypto_crt": "./tls/ca.crt",
 	"crypto_key": "./tls/key.pub"
 }

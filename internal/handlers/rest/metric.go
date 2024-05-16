@@ -122,7 +122,7 @@ func (h *MetricHandler) UpdateHandler(rw http.ResponseWriter, r *http.Request) {
 	} else if req.MType == domain.TypeMetricsGauge {
 		if err := h.metric.AddGauge(r.Context(), req.ID, *req.Value); err != nil {
 			logrus.Error(err)
-			rw.WriteHeader(http.StatusBadRequest)
+			rw.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		val, err := h.metric.GetGauge(r.Context(), req.ID)

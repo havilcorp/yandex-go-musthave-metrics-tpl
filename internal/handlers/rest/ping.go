@@ -1,3 +1,4 @@
+// Package rest роуты сервера
 package rest
 
 import (

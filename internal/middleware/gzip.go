@@ -80,7 +80,7 @@ func GzipMiddleware(h http.Handler) http.Handler {
 			ow.Header().Set("Content-Encoding", "gzip")
 			defer func() {
 				if err := cw.Close(); err != nil {
-					logrus.Error(err)
+					logrus.Info(err)
 				}
 			}()
 		}
@@ -95,7 +95,7 @@ func GzipMiddleware(h http.Handler) http.Handler {
 			r.Body = cr
 			defer func() {
 				if err := cr.Close(); err != nil {
-					logrus.Error(err)
+					logrus.Info(err)
 				}
 			}()
 		}

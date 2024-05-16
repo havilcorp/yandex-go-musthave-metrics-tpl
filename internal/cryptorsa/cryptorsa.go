@@ -16,8 +16,8 @@ func LoadPrivateKey(filepath string) (*rsa.PrivateKey, error) {
 		return nil, err
 	}
 	pemBlock, _ := pem.Decode(pemData)
-	priv, err := x509.ParsePKCS1PrivateKey(pemBlock.Bytes)
-	return priv, err
+	priv, err := x509.ParsePKCS8PrivateKey(pemBlock.Bytes)
+	return priv.(*rsa.PrivateKey), err
 }
 
 func LoadPublicKey(filepath string) (*rsa.PublicKey, error) {
@@ -26,8 +26,8 @@ func LoadPublicKey(filepath string) (*rsa.PublicKey, error) {
 		return nil, err
 	}
 	pemBlock, _ := pem.Decode(pemData)
-	priv, err := x509.ParsePKCS1PublicKey(pemBlock.Bytes)
-	return priv, err
+	pub, err := x509.ParsePKIXPublicKey(pemBlock.Bytes)
+	return pub.(*rsa.PublicKey), err
 }
 
 func EncryptOAEP(public *rsa.PublicKey, msg []byte) ([]byte, error) {
