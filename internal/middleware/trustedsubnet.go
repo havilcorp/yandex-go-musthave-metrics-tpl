@@ -14,12 +14,12 @@ func TrustedSubnetMiddleware(cidr string) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Header.Get("X-Real-IP") != "" {
 				ip := net.ParseIP(r.Header.Get("X-Real-IP"))
-				_, subnetIpNet, err := net.ParseCIDR(cidr)
+				_, subnetIPNet, err := net.ParseCIDR(cidr)
 				if err != nil {
 					logrus.Errorf("Ошибка при парсинге CIDR: %v", err)
 					return
 				}
-				if subnetIpNet.Contains(ip) {
+				if subnetIPNet.Contains(ip) {
 					logrus.Printf("%s входит в сеть %s\n", ip, cidr)
 					h.ServeHTTP(w, r)
 				} else {
