@@ -26,12 +26,12 @@ func workerSenderRequest(jobs <-chan metric.Metric, wg *sync.WaitGroup, conf *ag
 	defer wg.Done()
 	for job := range jobs {
 		var err error
+		sender := job.Send
+		if conf.AddressGRPC != "" {
+			sender = job.SendByGRPC
+		}
 		for _, sec := range []int{1, 3, 5} {
-			if conf.AddressGRPC != "" {
-				err = job.SendByGRPC()
-			} else {
-				err = job.Send()
-			}
+			err = sender()
 			if errors.Is(err, syscall.ECONNREFUSED) {
 				time.Sleep(time.Duration(sec) * time.Second)
 			} else {

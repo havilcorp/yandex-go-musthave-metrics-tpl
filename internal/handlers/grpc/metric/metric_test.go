@@ -11,7 +11,7 @@ import (
 )
 
 func TestMetricServer_UpdateMetricBulk(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricSaver(t)
 
 	metricHandler.On("AddGaugeBulk", mock.Anything, []domain.Gauge{{Key: "GAUGE", Value: float64(1.1)}}).Return(nil)
 	metricHandler.On("AddCounterBulk", mock.Anything, []domain.Counter{{Key: "COUNTER", Value: int64(1)}}).Return(nil)

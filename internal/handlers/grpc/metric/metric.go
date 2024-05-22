@@ -8,17 +8,17 @@ import (
 	pb "github.com/havilcorp/yandex-go-musthave-metrics-tpl/pkg/proto/metric"
 )
 
-type IMetric interface {
+type MetricSaver interface {
 	AddGaugeBulk(ctx context.Context, list []domain.Gauge) error
 	AddCounterBulk(ctx context.Context, list []domain.Counter) error
 }
 
 type MetricServer struct {
 	pb.UnimplementedMetricServer
-	metric IMetric
+	metric MetricSaver
 }
 
-func NewMetric(metric IMetric) *MetricServer {
+func NewMetric(metric MetricSaver) *MetricServer {
 	return &MetricServer{
 		metric: metric,
 	}

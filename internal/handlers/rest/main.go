@@ -11,16 +11,16 @@ import (
 	_ "github.com/swaggo/http-swagger/example/go-chi/docs"
 )
 
-type IMain interface {
+type MainRouter interface {
 	GetAllCounters(ctx context.Context) (map[string]int64, error)
 	GetAllGauge(ctx context.Context) (map[string]float64, error)
 }
 
 type MainHandler struct {
-	main IMain
+	main MainRouter
 }
 
-func NewMainHandler(main IMain) *MainHandler {
+func NewMainHandler(main MainRouter) *MainHandler {
 	return &MainHandler{
 		main: main,
 	}

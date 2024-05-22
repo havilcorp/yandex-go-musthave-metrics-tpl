@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type IMetric interface {
+type MetricRouter interface {
 	AddGauge(ctx context.Context, key string, gauge float64) error
 	AddCounter(ctx context.Context, key string, counter int64) error
 	AddGaugeBulk(ctx context.Context, list []domain.Gauge) error
@@ -24,11 +24,11 @@ type IMetric interface {
 }
 
 type MetricHandler struct {
-	metric IMetric
+	metric MetricRouter
 }
 
 // NewMetricHandler инициализация хендлера
-func NewMetricHandler(metric IMetric) *MetricHandler {
+func NewMetricHandler(metric MetricRouter) *MetricHandler {
 	return &MetricHandler{
 		metric: metric,
 	}

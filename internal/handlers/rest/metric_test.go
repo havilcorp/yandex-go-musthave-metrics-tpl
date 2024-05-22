@@ -20,7 +20,7 @@ import (
 )
 
 func TestMetricHandler_UpdateBulkHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 
 	metricHandler.On("AddGaugeBulk", mock.Anything, []domain.Gauge{{Key: "GAUGE", Value: float64(1.1)}}).Return(nil)
 	metricHandler.On("AddCounterBulk", mock.Anything, []domain.Counter{{Key: "COUNTER", Value: int64(1)}}).Return(nil)
@@ -123,7 +123,7 @@ func TestMetricHandler_UpdateBulkHandler(t *testing.T) {
 }
 
 func TestMetricHandler_UpdateHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 
 	metricHandler.On("AddGauge", mock.Anything, "GAUGE", float64(1.1)).Return(nil)
 	metricHandler.On("AddCounter", mock.Anything, "COUNTER", int64(1)).Return(nil)
@@ -255,7 +255,7 @@ func TestMetricHandler_UpdateHandler(t *testing.T) {
 }
 
 func TestMetricHandler_UpdateCounterHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 
 	metricHandler.On("AddCounter", mock.Anything, "COUNTER", int64(1)).Return(nil)
 	metricHandler.On("AddCounter", mock.Anything, "COUNTER", int64(2)).Return(errors.New(""))
@@ -316,7 +316,7 @@ func TestMetricHandler_UpdateCounterHandler(t *testing.T) {
 }
 
 func TestMetricHandler_UpdateGaugeHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 
 	metricHandler.On("AddGauge", mock.Anything, "GAUGE", float64(1.1)).Return(nil)
 	metricHandler.On("AddGauge", mock.Anything, "GAUGE", float64(2.1)).Return(errors.New(""))
@@ -377,7 +377,7 @@ func TestMetricHandler_UpdateGaugeHandler(t *testing.T) {
 }
 
 func TestMetricHandler_BadRequestHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 	type args struct {
 		all        string
 		key        string
@@ -421,7 +421,7 @@ func TestMetricHandler_BadRequestHandler(t *testing.T) {
 }
 
 func TestMetricHandler_GetMetricHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 	metricHandler.On("GetCounter", mock.Anything, "COUNTER").Return(int64(1), nil)
 	metricHandler.On("GetGauge", mock.Anything, "GAUGE").Return(float64(1.1), nil)
 
@@ -531,7 +531,7 @@ func TestMetricHandler_GetMetricHandler(t *testing.T) {
 }
 
 func TestMetricHandler_GetCounterMetricHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 	metricHandler.On("GetCounter", mock.Anything, "COUNTER").Return(int64(1), nil)
 	metricHandler.On("GetCounter", mock.Anything, "COUNTER404").Return(int64(2), domain.ErrValueNotFound)
 	metricHandler.On("GetCounter", mock.Anything, "COUNTER500").Return(int64(3), errors.New(""))
@@ -586,7 +586,7 @@ func TestMetricHandler_GetCounterMetricHandler(t *testing.T) {
 }
 
 func TestMetricHandler_GetGaugeMetricHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 	metricHandler.On("GetGauge", mock.Anything, "GAUGE").Return(float64(1.1), nil)
 	metricHandler.On("GetGauge", mock.Anything, "GAUGE404").Return(float64(2.1), domain.ErrValueNotFound)
 	metricHandler.On("GetGauge", mock.Anything, "GAUGE500").Return(float64(3.1), errors.New(""))
@@ -658,7 +658,7 @@ func Example() {
 
 func TestMetricHandler_Register(t *testing.T) {
 	r := chi.NewRouter()
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 	h := NewMetricHandler(metricHandler)
 	h.Register(r)
 }

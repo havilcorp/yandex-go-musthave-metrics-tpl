@@ -16,7 +16,7 @@ import (
 )
 
 func TestMainHandler_MainPageHandler(t *testing.T) {
-	mainHandler := mocks.NewIMain(t)
+	mainHandler := mocks.NewMainRouter(t)
 
 	mainHandler.On("GetAllCounters", mock.Anything).Return(map[string]int64{"count": 1}, nil)
 	mainHandler.On("GetAllGauge", mock.Anything).Return(map[string]float64{"gauge": 1.1}, nil)
@@ -43,7 +43,7 @@ func TestMainHandler_MainPageHandler(t *testing.T) {
 }
 
 func TestMainHandler_MainPageHandlerError(t *testing.T) {
-	mainHandler := mocks.NewIMain(t)
+	mainHandler := mocks.NewMainRouter(t)
 
 	mainHandler.On("GetAllCounters", mock.Anything).Return(map[string]int64{"count": 1}, errors.New(""))
 	mainHandler.On("GetAllGauge", mock.Anything).Return(map[string]float64{"gauge": 1.1}, errors.New(""))
@@ -64,7 +64,7 @@ func TestMainHandler_MainPageHandlerError(t *testing.T) {
 
 func TestMainHandler_Register(t *testing.T) {
 	r := chi.NewRouter()
-	mainHandler := mocks.NewIMain(t)
+	mainHandler := mocks.NewMainRouter(t)
 	h := NewMainHandler(mainHandler)
 	h.Register(r)
 }

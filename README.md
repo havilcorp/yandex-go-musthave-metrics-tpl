@@ -154,6 +154,11 @@ git fetch template && git checkout template/main .github
 Далее представлены команды для запуска поочередного тестирования
 
 ```shell
+go build -o cmd/agent/agent cmd/agent/main.go
+go build -o cmd/server/server cmd/server/main.go
+```
+
+```shell
 ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -test.run=^TestIteration1$
 ```
 

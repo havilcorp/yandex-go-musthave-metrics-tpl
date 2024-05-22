@@ -12,7 +12,7 @@ import (
 )
 
 func TestPingHandler_CheckDBHandler(t *testing.T) {
-	pinger := mocks.NewPinger(t)
+	pinger := mocks.NewPingRouter(t)
 	pinger.On("Ping").Return(nil)
 
 	type args struct {
@@ -48,7 +48,7 @@ func TestPingHandler_CheckDBHandler(t *testing.T) {
 
 func TestPingHandler_Register(t *testing.T) {
 	r := chi.NewRouter()
-	pinger := mocks.NewPinger(t)
+	pinger := mocks.NewPingRouter(t)
 	h := NewPingHandler(pinger)
 	h.Register(r)
 }
