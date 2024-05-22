@@ -73,7 +73,7 @@ func (store *PsqlStorage) AddGauge(ctx context.Context, key string, gauge float6
 		DO UPDATE SET value = $2;
 	`, key, gauge)
 	if err != nil {
-		return fmt.Errorf("addGauge => %w", err)
+		return err
 	}
 	return nil
 }
@@ -87,7 +87,7 @@ func (store *PsqlStorage) AddCounter(ctx context.Context, key string, counter in
 		DO UPDATE SET value = counter.value + $2;
 	`, key, counter)
 	if err != nil {
-		return fmt.Errorf("addCounter => %w", err)
+		return err
 	}
 	return nil
 }
@@ -96,13 +96,8 @@ func (store *PsqlStorage) AddCounter(ctx context.Context, key string, counter in
 func (store *PsqlStorage) AddGaugeBulk(ctx context.Context, list []domain.Gauge) error {
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("addGaugeBulk => %w", err)
+		return err
 	}
-	defer func() {
-		if err = tx.Rollback(); err != nil {
-			logrus.Error(err)
-		}
-	}()
 	for _, model := range list {
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO gauge (key, value)
@@ -111,11 +106,14 @@ func (store *PsqlStorage) AddGaugeBulk(ctx context.Context, list []domain.Gauge)
 			DO UPDATE SET value = $2;
 		`, model.Key, model.Value)
 		if err != nil {
-			return fmt.Errorf("addGaugeBulk => %w", err)
+			return err
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("addGaugeBulk => %w", err)
+		if err = tx.Rollback(); err != nil {
+			logrus.Error(err)
+		}
+		return err
 	}
 	return nil
 }
@@ -124,13 +122,8 @@ func (store *PsqlStorage) AddGaugeBulk(ctx context.Context, list []domain.Gauge)
 func (store *PsqlStorage) AddCounterBulk(ctx context.Context, list []domain.Counter) error {
 	tx, err := store.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("addCounterBulk => %w", err)
+		return err
 	}
-	defer func() {
-		if err = tx.Rollback(); err != nil {
-			logrus.Error(err)
-		}
-	}()
 	for _, model := range list {
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO counter (key, value)
@@ -139,11 +132,14 @@ func (store *PsqlStorage) AddCounterBulk(ctx context.Context, list []domain.Coun
 			DO UPDATE SET value = counter.value + $2;
 		`, model.Key, model.Value)
 		if err != nil {
-			return fmt.Errorf("addCounterBulk => %w", err)
+			return err
 		}
 	}
 	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("addCounterBulk => %w", err)
+		if err = tx.Rollback(); err != nil {
+			logrus.Error(err)
+		}
+		return err
 	}
 	return nil
 }
@@ -224,7 +220,7 @@ func (store *PsqlStorage) GetAllGauge(ctx context.Context) (map[string]float64, 
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			logrus.Error(err)
+			logrus.Info(err)
 		}
 	}()
 	for rows.Next() {
@@ -263,7 +259,7 @@ func (store *PsqlStorage) GetAllCounters(ctx context.Context) (map[string]int64,
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			logrus.Error(err)
+			logrus.Info(err)
 		}
 	}()
 	for rows.Next() {

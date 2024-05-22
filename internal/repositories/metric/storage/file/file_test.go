@@ -2,6 +2,8 @@ package file
 
 import (
 	"context"
+	"errors"
+	"os"
 	"testing"
 
 	"github.com/havilcorp/yandex-go-musthave-metrics-tpl/domain"
@@ -91,7 +93,7 @@ func TestFileStorage_SaveToFile_LoadFromFile(t *testing.T) {
 	}
 	err = store.LoadFromFile(context.Background())
 	if err != nil {
-		t.Errorf("SaveToFile %v", err)
+		t.Errorf("LoadFromFile %v", err)
 	}
 	confForTestRestore := server.Config{
 		StoreInterval:   999,
@@ -101,5 +103,57 @@ func TestFileStorage_SaveToFile_LoadFromFile(t *testing.T) {
 	_, err = NewFileStorage(&confForTestRestore)
 	if err != nil {
 		t.Errorf("NewFileStorage %v", err)
+	}
+}
+
+func TestFileStorage_AddGauge(t *testing.T) {
+	conf := server.Config{
+		StoreInterval:   0,
+		IsRestore:       false,
+		FileStoragePath: "/tmp/test-metrics-db.json",
+	}
+	store, err := NewFileStorage(&conf)
+	if err != nil {
+		t.Errorf("NewFileStorage %v", err)
+	}
+	err = store.AddGauge(context.Background(), "GAUGE", 1.1)
+	if err != nil {
+		t.Errorf("AddGauge %v", err)
+	}
+}
+
+func TestFileStorage_AddCounter(t *testing.T) {
+	conf := server.Config{
+		StoreInterval:   0,
+		IsRestore:       false,
+		FileStoragePath: "/tmp/test-metrics-db.json",
+	}
+	store, err := NewFileStorage(&conf)
+	if err != nil {
+		t.Errorf("NewFileStorage %v", err)
+	}
+	err = store.AddCounter(context.Background(), "COUNTER", 1)
+	if err != nil {
+		t.Errorf("AddCounter %v", err)
+	}
+	err = store.AddCounter(context.Background(), "COUNTER", 1)
+	if err != nil {
+		t.Errorf("AddCounter %v", err)
+	}
+}
+
+func TestFileStorage_LoadFromFile(t *testing.T) {
+	conf := server.Config{
+		StoreInterval:   999,
+		IsRestore:       false,
+		FileStoragePath: "/tmp/not-found.json",
+	}
+	store, err := NewFileStorage(&conf)
+	if err != nil {
+		t.Errorf("NewFileStorage %v", err)
+	}
+	err = store.LoadFromFile(context.Background())
+	if !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("LoadFromFile %v", err)
 	}
 }

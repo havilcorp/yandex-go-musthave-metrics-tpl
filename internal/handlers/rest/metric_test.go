@@ -1,8 +1,9 @@
-package handlers
+package rest
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -19,13 +20,17 @@ import (
 )
 
 func TestMetricHandler_UpdateBulkHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 
 	metricHandler.On("AddGaugeBulk", mock.Anything, []domain.Gauge{{Key: "GAUGE", Value: float64(1.1)}}).Return(nil)
 	metricHandler.On("AddCounterBulk", mock.Anything, []domain.Counter{{Key: "COUNTER", Value: int64(1)}}).Return(nil)
+	metricHandler.On("AddGaugeBulk", mock.Anything, []domain.Gauge{{Key: "GAUGE", Value: float64(2.1)}}).Return(errors.New(""))
+	metricHandler.On("AddCounterBulk", mock.Anything, []domain.Counter{{Key: "COUNTER", Value: int64(2)}}).Return(errors.New(""))
 
 	delta := int64(1)
 	value := float64(1.1)
+	deltaErr := int64(2)
+	valueErr := float64(2.1)
 
 	type args struct {
 		data       []domain.MetricRequest
@@ -65,6 +70,36 @@ func TestMetricHandler_UpdateBulkHandler(t *testing.T) {
 				}},
 			},
 		},
+		{
+			name: "UpdateBulkHandler2",
+			args: args{
+				statusCode: 500,
+				data: []domain.MetricRequest{{
+					ID:    "COUNTER",
+					MType: "counter",
+					Delta: &deltaErr,
+				}, {
+					ID:    "GAUGE",
+					MType: "gauge",
+					Value: &value,
+				}},
+			},
+		},
+		{
+			name: "UpdateBulkHandler3",
+			args: args{
+				statusCode: 500,
+				data: []domain.MetricRequest{{
+					ID:    "COUNTER",
+					MType: "counter",
+					Delta: &delta,
+				}, {
+					ID:    "GAUGE",
+					MType: "gauge",
+					Value: &valueErr,
+				}},
+			},
+		},
 	}
 	for _, tt := range tests {
 		jsonData, err := json.Marshal(tt.args.data)
@@ -80,7 +115,7 @@ func TestMetricHandler_UpdateBulkHandler(t *testing.T) {
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer func() {
 				if err := res.Body.Close(); err != nil {
-					logrus.Error(err)
+					logrus.Info(err)
 				}
 			}()
 		})
@@ -88,15 +123,29 @@ func TestMetricHandler_UpdateBulkHandler(t *testing.T) {
 }
 
 func TestMetricHandler_UpdateHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 
 	metricHandler.On("AddGauge", mock.Anything, "GAUGE", float64(1.1)).Return(nil)
 	metricHandler.On("AddCounter", mock.Anything, "COUNTER", int64(1)).Return(nil)
 	metricHandler.On("GetGauge", mock.Anything, "GAUGE").Return(float64(1.1), nil)
 	metricHandler.On("GetCounter", mock.Anything, "COUNTER").Return(int64(1), nil)
 
+	metricHandler.On("AddGauge", mock.Anything, "GAUGE", float64(2.1)).Return(errors.New(""))
+	metricHandler.On("AddCounter", mock.Anything, "COUNTER", int64(2)).Return(errors.New(""))
+	metricHandler.On("GetGauge", mock.Anything, "GAUGE").Return(float64(2.1), nil)
+	metricHandler.On("GetCounter", mock.Anything, "COUNTER").Return(int64(2), nil)
+
+	metricHandler.On("AddGauge", mock.Anything, "GAUGEErr", float64(3.1)).Return(nil)
+	metricHandler.On("AddCounter", mock.Anything, "COUNTERErr", int64(3)).Return(nil)
+	metricHandler.On("GetGauge", mock.Anything, "GAUGEErr").Return(float64(3.1), errors.New(""))
+	metricHandler.On("GetCounter", mock.Anything, "COUNTERErr").Return(int64(3), errors.New(""))
+
 	delta := int64(1)
 	value := float64(1.1)
+	deltaErrAdd := int64(2)
+	valueErrAdd := float64(2.1)
+	deltaErrGet := int64(3)
+	valueErrGet := float64(3.1)
 
 	type args struct {
 		data       domain.MetricRequest
@@ -139,6 +188,50 @@ func TestMetricHandler_UpdateHandler(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "UpdateHandler 4",
+			args: args{
+				statusCode: 500,
+				data: domain.MetricRequest{
+					ID:    "GAUGE",
+					MType: "gauge",
+					Value: &valueErrAdd,
+				},
+			},
+		},
+		{
+			name: "UpdateHandler 5",
+			args: args{
+				statusCode: 500,
+				data: domain.MetricRequest{
+					ID:    "COUNTER",
+					MType: "counter",
+					Delta: &deltaErrAdd,
+				},
+			},
+		},
+		{
+			name: "UpdateHandler 6",
+			args: args{
+				statusCode: 500,
+				data: domain.MetricRequest{
+					ID:    "GAUGEErr",
+					MType: "gauge",
+					Value: &valueErrGet,
+				},
+			},
+		},
+		{
+			name: "UpdateHandler 7",
+			args: args{
+				statusCode: 500,
+				data: domain.MetricRequest{
+					ID:    "COUNTERErr",
+					MType: "counter",
+					Delta: &deltaErrGet,
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		jsonData, err := json.Marshal(tt.args.data)
@@ -154,7 +247,7 @@ func TestMetricHandler_UpdateHandler(t *testing.T) {
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer func() {
 				if err := res.Body.Close(); err != nil {
-					logrus.Error(err)
+					logrus.Info(err)
 				}
 			}()
 		})
@@ -162,9 +255,10 @@ func TestMetricHandler_UpdateHandler(t *testing.T) {
 }
 
 func TestMetricHandler_UpdateCounterHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 
 	metricHandler.On("AddCounter", mock.Anything, "COUNTER", int64(1)).Return(nil)
+	metricHandler.On("AddCounter", mock.Anything, "COUNTER", int64(2)).Return(errors.New(""))
 
 	type args struct {
 		key        string
@@ -176,7 +270,7 @@ func TestMetricHandler_UpdateCounterHandler(t *testing.T) {
 		args args
 	}{
 		{
-			name: "UpdateCounterHandler",
+			name: "UpdateCounterHandler 1",
 			args: args{
 				statusCode: 200,
 				key:        "COUNTER",
@@ -184,11 +278,19 @@ func TestMetricHandler_UpdateCounterHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "UpdateCounterHandler2",
+			name: "UpdateCounterHandler 2",
 			args: args{
 				statusCode: 400,
 				key:        "COUNTER",
 				value:      "1.2",
+			},
+		},
+		{
+			name: "UpdateCounterHandler 3",
+			args: args{
+				statusCode: 400,
+				key:        "COUNTER",
+				value:      "2",
 			},
 		},
 	}
@@ -206,7 +308,7 @@ func TestMetricHandler_UpdateCounterHandler(t *testing.T) {
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer func() {
 				if err := res.Body.Close(); err != nil {
-					logrus.Error(err)
+					logrus.Info(err)
 				}
 			}()
 		})
@@ -214,9 +316,10 @@ func TestMetricHandler_UpdateCounterHandler(t *testing.T) {
 }
 
 func TestMetricHandler_UpdateGaugeHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 
 	metricHandler.On("AddGauge", mock.Anything, "GAUGE", float64(1.1)).Return(nil)
+	metricHandler.On("AddGauge", mock.Anything, "GAUGE", float64(2.1)).Return(errors.New(""))
 
 	type args struct {
 		key        string
@@ -228,7 +331,7 @@ func TestMetricHandler_UpdateGaugeHandler(t *testing.T) {
 		args args
 	}{
 		{
-			name: "UpdateGaugeHandler",
+			name: "UpdateGaugeHandler 1",
 			args: args{
 				statusCode: 200,
 				key:        "GAUGE",
@@ -241,6 +344,14 @@ func TestMetricHandler_UpdateGaugeHandler(t *testing.T) {
 				statusCode: 400,
 				key:        "GAUGE",
 				value:      "asd",
+			},
+		},
+		{
+			name: "UpdateGaugeHandler 3",
+			args: args{
+				statusCode: 400,
+				key:        "GAUGE",
+				value:      "2.1",
 			},
 		},
 	}
@@ -258,7 +369,7 @@ func TestMetricHandler_UpdateGaugeHandler(t *testing.T) {
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer func() {
 				if err := res.Body.Close(); err != nil {
-					logrus.Error(err)
+					logrus.Info(err)
 				}
 			}()
 		})
@@ -266,7 +377,7 @@ func TestMetricHandler_UpdateGaugeHandler(t *testing.T) {
 }
 
 func TestMetricHandler_BadRequestHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 	type args struct {
 		all        string
 		key        string
@@ -302,7 +413,7 @@ func TestMetricHandler_BadRequestHandler(t *testing.T) {
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer func() {
 				if err := res.Body.Close(); err != nil {
-					logrus.Error(err)
+					logrus.Info(err)
 				}
 			}()
 		})
@@ -310,9 +421,15 @@ func TestMetricHandler_BadRequestHandler(t *testing.T) {
 }
 
 func TestMetricHandler_GetMetricHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 	metricHandler.On("GetCounter", mock.Anything, "COUNTER").Return(int64(1), nil)
 	metricHandler.On("GetGauge", mock.Anything, "GAUGE").Return(float64(1.1), nil)
+
+	metricHandler.On("GetCounter", mock.Anything, "COUNTER404").Return(int64(2), domain.ErrValueNotFound)
+	metricHandler.On("GetGauge", mock.Anything, "GAUGE404").Return(float64(2.1), domain.ErrValueNotFound)
+
+	metricHandler.On("GetCounter", mock.Anything, "COUNTER500").Return(int64(3), errors.New(""))
+	metricHandler.On("GetGauge", mock.Anything, "GAUGE500").Return(float64(3.1), errors.New(""))
 	type args struct {
 		data       domain.MetricRequest
 		statusCode int
@@ -351,6 +468,46 @@ func TestMetricHandler_GetMetricHandler(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "GetMetricHandler 4",
+			args: args{
+				statusCode: 404,
+				data: domain.MetricRequest{
+					ID:    "COUNTER404",
+					MType: "counter",
+				},
+			},
+		},
+		{
+			name: "GetMetricHandler 5",
+			args: args{
+				statusCode: 404,
+				data: domain.MetricRequest{
+					ID:    "GAUGE404",
+					MType: "gauge",
+				},
+			},
+		},
+		{
+			name: "GetMetricHandler 6",
+			args: args{
+				statusCode: 500,
+				data: domain.MetricRequest{
+					ID:    "COUNTER500",
+					MType: "counter",
+				},
+			},
+		},
+		{
+			name: "GetMetricHandler 7",
+			args: args{
+				statusCode: 500,
+				data: domain.MetricRequest{
+					ID:    "GAUGE500",
+					MType: "gauge",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		jsonData, err := json.Marshal(tt.args.data)
@@ -366,7 +523,7 @@ func TestMetricHandler_GetMetricHandler(t *testing.T) {
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer func() {
 				if err := res.Body.Close(); err != nil {
-					logrus.Error(err)
+					logrus.Info(err)
 				}
 			}()
 		})
@@ -374,8 +531,10 @@ func TestMetricHandler_GetMetricHandler(t *testing.T) {
 }
 
 func TestMetricHandler_GetCounterMetricHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 	metricHandler.On("GetCounter", mock.Anything, "COUNTER").Return(int64(1), nil)
+	metricHandler.On("GetCounter", mock.Anything, "COUNTER404").Return(int64(2), domain.ErrValueNotFound)
+	metricHandler.On("GetCounter", mock.Anything, "COUNTER500").Return(int64(3), errors.New(""))
 	type args struct {
 		name       string
 		statusCode int
@@ -385,10 +544,24 @@ func TestMetricHandler_GetCounterMetricHandler(t *testing.T) {
 		args args
 	}{
 		{
-			name: "GetCounterMetricHandler",
+			name: "GetCounterMetricHandler 200",
 			args: args{
 				statusCode: 200,
 				name:       "COUNTER",
+			},
+		},
+		{
+			name: "GetCounterMetricHandler 404",
+			args: args{
+				statusCode: 404,
+				name:       "COUNTER404",
+			},
+		},
+		{
+			name: "GetCounterMetricHandler 500",
+			args: args{
+				statusCode: 500,
+				name:       "COUNTER500",
 			},
 		},
 	}
@@ -405,7 +578,7 @@ func TestMetricHandler_GetCounterMetricHandler(t *testing.T) {
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer func() {
 				if err := res.Body.Close(); err != nil {
-					logrus.Error(err)
+					logrus.Info(err)
 				}
 			}()
 		})
@@ -413,8 +586,10 @@ func TestMetricHandler_GetCounterMetricHandler(t *testing.T) {
 }
 
 func TestMetricHandler_GetGaugeMetricHandler(t *testing.T) {
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 	metricHandler.On("GetGauge", mock.Anything, "GAUGE").Return(float64(1.1), nil)
+	metricHandler.On("GetGauge", mock.Anything, "GAUGE404").Return(float64(2.1), domain.ErrValueNotFound)
+	metricHandler.On("GetGauge", mock.Anything, "GAUGE500").Return(float64(3.1), errors.New(""))
 	type args struct {
 		name       string
 		statusCode int
@@ -424,10 +599,24 @@ func TestMetricHandler_GetGaugeMetricHandler(t *testing.T) {
 		args args
 	}{
 		{
-			name: "GetGaugeMetricHandler",
+			name: "GetGaugeMetricHandler 200",
 			args: args{
 				statusCode: 200,
 				name:       "GAUGE",
+			},
+		},
+		{
+			name: "GetGaugeMetricHandler 404",
+			args: args{
+				statusCode: 404,
+				name:       "GAUGE404",
+			},
+		},
+		{
+			name: "GetGaugeMetricHandler 500",
+			args: args{
+				statusCode: 500,
+				name:       "GAUGE500",
 			},
 		},
 	}
@@ -444,7 +633,7 @@ func TestMetricHandler_GetGaugeMetricHandler(t *testing.T) {
 			assert.Equal(t, tt.args.statusCode, res.StatusCode)
 			defer func() {
 				if err := res.Body.Close(); err != nil {
-					logrus.Error(err)
+					logrus.Info(err)
 				}
 			}()
 		})
@@ -453,10 +642,7 @@ func TestMetricHandler_GetGaugeMetricHandler(t *testing.T) {
 
 func Example() {
 	conf := server.NewServerConfig()
-	if err := conf.WriteByFlag(); err != nil {
-		logrus.Error(err)
-		return
-	}
+	conf.WriteByFlag()
 	if err := conf.WriteByEnv(); err != nil {
 		logrus.Error(err)
 		return
@@ -472,7 +658,7 @@ func Example() {
 
 func TestMetricHandler_Register(t *testing.T) {
 	r := chi.NewRouter()
-	metricHandler := mocks.NewIMetric(t)
+	metricHandler := mocks.NewMetricRouter(t)
 	h := NewMetricHandler(metricHandler)
 	h.Register(r)
 }

@@ -1,13 +1,13 @@
 // Package repositories репозиторий для проверки статуса подключения к бд
 package repositories
 
-type IDataBase interface {
+type DataBaseSaver interface {
 	Ping() error
 }
 
-type DataBase struct{ db IDataBase }
+type DataBase struct{ db DataBaseSaver }
 
-func NewDataBase(db IDataBase) *DataBase {
+func NewDataBase(db DataBaseSaver) *DataBase {
 	return &DataBase{
 		db: db,
 	}

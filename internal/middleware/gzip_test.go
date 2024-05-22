@@ -41,7 +41,7 @@ func TestGzipMiddleware(t *testing.T) {
 	assert.Equal(t, http.StatusOK, res.StatusCode)
 	defer func() {
 		if err := res.Body.Close(); err != nil {
-			logrus.Error(err)
+			logrus.Info(err)
 		}
 	}()
 }

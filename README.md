@@ -10,28 +10,40 @@
 go run cmd/server/main.go
 ```
 
+Для запуска сервера в режиме gRPC необходимо:
+
+1. либо в конфиге указать address_grpc
+2. либо передать флаг address_grpc
+3. либо указать переменную окружения (env) ADDRESS_GRPC
+
 ###### Конфигурация
 
 Флаги
 
 - -h - показать все команды
 - -a - адрес и порт сервера
+- -address_grpc - адрес grpc
 - -i - интевал сохранения метрик в файл
 - -f - файл для созранения метрик. По деволту: /tmp/metrics-db.json
 - -r - загружать ли при запуске метрики из файла
 - -d - строка подключения к базе данных
-- -r - ключ sha256
+- -k - ключ sha256
+- -crypto-key - путь к файлу с приватным ключем для расшифрования сообщения
 - -c - путь к файлу конфигов
+- -t - доверенная маска подсети, например: 192.168.0.0/24
 
 Env
 
 - ADDRESS - адрес и порт сервера
+- ADDRESS_GRPC - адрес и порт GRPC сервера
 - STORE_INTERVAL - интевал сохранения метрик в файл
 - FILE_STORAGE_PATH - файл для созранения метрик. По деволту: /tmp/metrics-db.json
 - RESTORE - загружать ли при запуске метрики из файла
 - DATABASE_DSN - строка подключения к базе данных
 - KEY - ключ sha256
+- CRYPTO_KEY - путь до файла с приватным ключем для расшифрования сообщения
 - CONFIG - путь к файлу конфигов
+- TRUSTED_SUBNET - доверенная маска подсети, например: 192.168.0.0/24
 
 ```go
 postgres://postgres:password@localhost:5433/postgres?sslmode=disable
@@ -43,23 +55,37 @@ postgres://postgres:password@localhost:5433/postgres?sslmode=disable
 go run cmd/agent/main.go
 ```
 
+Для запуска агента в режиме gRPC необходимо:
+
+1. либо в конфиге указать address_grpc
+2. либо передать флаг address_grpc
+3. либо указать переменную окружения (env) ADDRESS_GRPC
+
 ###### Конфигурация
 
 Флаги
 
 - -a - адрес и порт сервера
+- -address_grpc - адрес grpc
 - -r - интервал отправки метрик на сервер
 - -p - интервал сбора метрик
 - -k - ключ sha256
 - -l - лимит запросов
+- -crypto-key - путь к файлу с публичным ключем для шифрования сообщения
+- -crypto-crt - путь к файлу с сертификатом
+- -c - путь к файлу конфигов
 
 Env
 
 - ADDRESS - адрес и порт сервера
+- ADDRESS_GRPC - адрес и порт GRPC сервера
 - REPORT_INTERVAL - интервал отправки метрик на сервер
 - POLL_INTERVAL - интервал сбора метрик
 - KEY - ключ sha256
 - RATE_LIMIT - лимит запросов
+- CRYPTO_KEY - путь до файла с публичным ключем для шифрования сообщения
+- CRYPTO_CRT - путь к файлу с сертификатом
+- CONFIG - путь к файлу конфигов
 
 ### Запуск статического анализатора
 
@@ -78,6 +104,28 @@ go run cmd/staticlint/main.go ./...
 - анализатор для проверки os.Exit в пакете main в функции main
 - анализатор для проверки fmt.Print в коде
 - анализатор для проверки закомментированного кода
+
+## TLS защищенное соединение
+
+Зайдите в корневую директорию, затем в папке tls и там пропишите:
+
+```shell
+openssl genrsa -out ca.key 2048
+openssl req -new -x509 -days 365 -key ca.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=Acme Root CA" -out ca.crt
+openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/C=CN/ST=GD/L=SZ/O=Acme, Inc./CN=localhost" -out server.csr
+openssl x509 -req -extfile <(printf "subjectAltName=DNS:localhost") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
+openssl rsa -in server.key -pubout > key.pub
+```
+
+Для запуска gRPC в режиме tls необходимо:
+
+1. Для агента указать путь crypto_crt как "./tls/ca.crt"
+2. Для сервера указать путь crypto_key как "./tls/server.key"
+
+Для шифрования трафика по протоколу REST между агентом и сервером по ключу RSA необходимо:
+
+1. Для агента указать путь crypto_key как "./tls/key.pub"
+2. Для сервера указать путь crypto_key как "./tls/server.key"
 
 ## Обновление шаблона
 
@@ -104,6 +152,11 @@ git fetch template && git checkout template/main .github
 Подробнее про локальный и автоматический запуск читайте в [README автотестов](https://github.com/Yandex-Practicum/go-autotests).
 
 Далее представлены команды для запуска поочередного тестирования
+
+```shell
+go build -o cmd/agent/agent cmd/agent/main.go
+go build -o cmd/server/server cmd/server/main.go
+```
 
 ```shell
 ./metricstest-darwin-arm64 -test.v -binary-path=cmd/server/server -agent-binary-path=cmd/agent/agent -source-path=. -test.run=^TestIteration1$
@@ -210,3 +263,9 @@ go tool cover -func=coverage.out
 ```shell
 swag init --dir ./internal/handlers
 ```
+
+## GRPC Генерация прото файлов
+
+protoc --go_out=. --go_opt=paths=source_relative \
+ --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+ pkg/proto/metric/metric.proto

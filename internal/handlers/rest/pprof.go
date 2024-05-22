@@ -1,4 +1,5 @@
-package handlers
+// Package rest роуты сервера
+package rest
 
 import (
 	"net/http/pprof"

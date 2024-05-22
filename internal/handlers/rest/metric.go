@@ -1,5 +1,5 @@
-// Package handlers роуты сервера
-package handlers
+// Package rest роуты сервера
+package rest
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type IMetric interface {
+type MetricRouter interface {
 	AddGauge(ctx context.Context, key string, gauge float64) error
 	AddCounter(ctx context.Context, key string, counter int64) error
 	AddGaugeBulk(ctx context.Context, list []domain.Gauge) error
@@ -24,11 +24,11 @@ type IMetric interface {
 }
 
 type MetricHandler struct {
-	metric IMetric
+	metric MetricRouter
 }
 
 // NewMetricHandler инициализация хендлера
-func NewMetricHandler(metric IMetric) *MetricHandler {
+func NewMetricHandler(metric MetricRouter) *MetricHandler {
 	return &MetricHandler{
 		metric: metric,
 	}
@@ -122,7 +122,7 @@ func (h *MetricHandler) UpdateHandler(rw http.ResponseWriter, r *http.Request) {
 	} else if req.MType == domain.TypeMetricsGauge {
 		if err := h.metric.AddGauge(r.Context(), req.ID, *req.Value); err != nil {
 			logrus.Error(err)
-			rw.WriteHeader(http.StatusBadRequest)
+			rw.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 		val, err := h.metric.GetGauge(r.Context(), req.ID)

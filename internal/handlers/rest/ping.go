@@ -1,4 +1,5 @@
-package handlers
+// Package rest роуты сервера
+package rest
 
 import (
 	"net/http"
@@ -7,16 +8,16 @@ import (
 )
 
 //go:generate mockery --name Pinger
-type Pinger interface {
+type PingRouter interface {
 	Ping() error
 }
 
 type PingHandler struct {
-	pingService Pinger
+	pingService PingRouter
 }
 
 // NewPingHandler инициализация
-func NewPingHandler(pingService Pinger) *PingHandler {
+func NewPingHandler(pingService PingRouter) *PingHandler {
 	return &PingHandler{pingService: pingService}
 }
 

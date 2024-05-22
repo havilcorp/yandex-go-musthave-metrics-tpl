@@ -4,13 +4,16 @@ package metric
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/hmac"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	mr "math/rand"
+	"net"
 	"runtime"
 	"sync"
 	"time"
@@ -22,13 +25,16 @@ import (
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
 	"github.com/sirupsen/logrus"
+
+	pb "github.com/havilcorp/yandex-go-musthave-metrics-tpl/pkg/proto/metric"
 )
 
 type Metric struct {
-	mutex  *sync.Mutex
-	config *agent.Config
-	value  map[string]float64
-	delta  map[string]int64
+	mutex        *sync.Mutex
+	config       *agent.Config
+	value        map[string]float64
+	delta        map[string]int64
+	metricClient pb.MetricClient
 }
 
 func NewMetric(config *agent.Config) *Metric {
@@ -38,6 +44,10 @@ func NewMetric(config *agent.Config) *Metric {
 		value:  make(map[string]float64, 0),
 		delta:  make(map[string]int64, 0),
 	}
+}
+
+func (m *Metric) AddMetricClient(mc pb.MetricClient) {
+	m.metricClient = mc
 }
 
 func (m *Metric) String() string {
@@ -138,6 +148,31 @@ func (m *Metric) WriteMain() {
 	m.delta["PollCount"] = int64(1)
 }
 
+func (m *Metric) SendByGRPC() error {
+	gauge := make([]*pb.Gauge, 0)
+	counter := make([]*pb.Counter, 0)
+	for key, value := range m.value {
+		gauge = append(gauge, &pb.Gauge{
+			Key:   key,
+			Value: value,
+		})
+	}
+	for key, delta := range m.delta {
+		counter = append(counter, &pb.Counter{
+			Key:   key,
+			Value: delta,
+		})
+	}
+	if m.metricClient == nil {
+		return errors.New("metricClient has a nil pointer")
+	}
+	_, err := m.metricClient.UpdateMetricBulk(context.Background(), &pb.UpdateMetricBulkRequest{
+		Gauge:   gauge,
+		Counter: counter,
+	})
+	return err
+}
+
 // Send отправка метрик на сервер
 func (m *Metric) Send() error {
 	logrus.Info("SEND")
@@ -160,7 +195,7 @@ func (m *Metric) Send() error {
 		var pub *rsa.PublicKey
 		pub, err = cryptorsa.LoadPublicKey(m.config.CryptoKey)
 		if err != nil {
-			return fmt.Errorf("ParsePKCS1PublicKey: %w", err)
+			return fmt.Errorf("LoadPublicKey: %w", err)
 		}
 		jsonMetric, err = cryptorsa.EncryptOAEP(pub, jsonMetric)
 		if err != nil {
@@ -183,6 +218,17 @@ func (m *Metric) Send() error {
 		r.Header.Set("HashSHA256", hashSha256)
 	}
 	r.SetBody(buf)
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		return fmt.Errorf("get ip address => %w", err)
+	}
+	defer func() {
+		if err := conn.Close(); err != nil {
+			logrus.Info(err)
+		}
+	}()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	r.Header.Set("X-Real-IP", localAddr.IP.To4().String())
 	if _, err := r.Post(url); err != nil {
 		return fmt.Errorf("sendMetrics => %w", err)
 	}

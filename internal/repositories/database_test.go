@@ -7,7 +7,7 @@ import (
 )
 
 func TestDataBase_Ping(t *testing.T) {
-	database := mocks.NewIDataBase(t)
+	database := mocks.NewDataBaseSaver(t)
 	database.On("Ping").Return(nil)
 	db := NewDataBase(database)
 	err := db.Ping()
